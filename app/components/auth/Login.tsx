@@ -1,21 +1,25 @@
+import { router } from 'expo-router';
 import React, { useState } from 'react';
 import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  TouchableOpacity,
   SafeAreaView,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from 'react-native';
-import { router } from 'expo-router';
-import { Button, Input, AnimationView } from '../ui';
 import { Colors, Layout } from '../../constants';
 import { globalStyles } from '../../styles';
+import { AnimationView, Button, Input } from '../ui';
 
 // Import the actual Lottie animation JSON placeholder
 const studyAnimation = require('../../../assets/animations/study-placeholder.json');
 
-export const Login: React.FC = () => {
+interface LoginProps {
+  onLoginSuccess?: () => void;
+}
+
+export const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [emailError, setEmailError] = useState('');
@@ -53,8 +57,13 @@ export const Login: React.FC = () => {
     try {
       // Simulate API call
       await new Promise(resolve => setTimeout(resolve, 1500));
-      // Navigate to main app or dashboard
-      router.replace('/(tabs)');
+      // Call the success callback if provided
+      if (onLoginSuccess) {
+        onLoginSuccess();
+      } else {
+        // Fallback navigation
+        router.replace('/(tabs)/groups');
+      }
     } catch (error) {
       console.error('Login error:', error);
     } finally {

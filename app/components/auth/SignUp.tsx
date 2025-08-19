@@ -1,16 +1,16 @@
+import { router } from 'expo-router';
 import React, { useState } from 'react';
 import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  TouchableOpacity,
   SafeAreaView,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from 'react-native';
-import { router } from 'expo-router';
-import { Button, Input, AnimationView } from '../ui';
 import { Colors, Layout } from '../../constants';
 import { globalStyles } from '../../styles';
+import { AnimationView, Button, Input } from '../ui';
 
 // Import the actual Lottie animation JSON placeholder
 const studyAnimation = require('../../../assets/animations/study-placeholder.json');
