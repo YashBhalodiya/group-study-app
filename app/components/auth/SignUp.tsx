@@ -74,12 +74,26 @@ export const SignUp: React.FC = () => {
 
     setLoading(true);
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      // Navigate to main app or dashboard
-      router.replace('/(tabs)');
-    } catch (error) {
+      // 👇 Call your backend API instead of Amplify
+      const response = await fetch("https://<your-api-gateway-url>/signup", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name,
+          email,
+          password, // ⚠️ In production, hash before storing
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Signup failed");
+      }
+
+      alert("Signup successful!");
+      router.replace('./Verify'); // Or go to dashboard
+    } catch (error: any) {
       console.error('Sign up error:', error);
+      alert(error.message || "Error signing up");
     } finally {
       setLoading(false);
     }
@@ -112,66 +126,12 @@ export const SignUp: React.FC = () => {
         </View>
 
         <View style={styles.formContainer}>
-          <Input
-            label="Full Name"
-            placeholder="Enter your full name"
-            value={name}
-            onChangeText={setName}
-            error={nameError}
-            autoCapitalize="words"
-            autoComplete="name"
-          />
+          <Input label="Full Name" placeholder="Enter your full name" value={name} onChangeText={setName} error={nameError} autoCapitalize="words" autoComplete="name" />
+          <Input label="Email" placeholder="Enter your email" value={email} onChangeText={setEmail} error={emailError} keyboardType="email-address" autoCapitalize="none" autoComplete="email" />
+          <Input label="Password" placeholder="Create a password" value={password} onChangeText={setPassword} error={passwordError} secureTextEntry autoComplete="password-new" />
+          <Input label="Confirm Password" placeholder="Confirm your password" value={confirmPassword} onChangeText={setConfirmPassword} error={confirmPasswordError} secureTextEntry autoComplete="password-new" />
 
-          <Input
-            label="Email"
-            placeholder="Enter your email"
-            value={email}
-            onChangeText={setEmail}
-            error={emailError}
-            keyboardType="email-address"
-            autoCapitalize="none"
-            autoComplete="email"
-          />
-
-          <Input
-            label="Password"
-            placeholder="Create a password"
-            value={password}
-            onChangeText={setPassword}
-            error={passwordError}
-            secureTextEntry
-            autoComplete="password-new"
-          />
-
-          <Input
-            label="Confirm Password"
-            placeholder="Confirm your password"
-            value={confirmPassword}
-            onChangeText={setConfirmPassword}
-            error={confirmPasswordError}
-            secureTextEntry
-            autoComplete="password-new"
-          />
-
-          <Button
-            title="Sign Up"
-            onPress={handleSignUp}
-            loading={loading}
-            style={styles.signUpButton}
-          />
-
-          <View style={styles.divider}>
-            <View style={styles.dividerLine} />
-            <Text style={styles.dividerText}>or</Text>
-            <View style={styles.dividerLine} />
-          </View>
-
-          <Button
-            title="Sign Up with Google"
-            onPress={() => console.log('Google sign up')}
-            variant="outline"
-            style={styles.googleButton}
-          />
+          <Button title="Sign Up" onPress={handleSignUp} loading={loading} style={styles.signUpButton} />
 
           <View style={styles.footer}>
             <Text style={styles.footerText}>Already have an account? </Text>
@@ -186,78 +146,16 @@ export const SignUp: React.FC = () => {
 };
 
 const styles = StyleSheet.create({
-  container: {
-    backgroundColor: Colors.background,
-  },
-  scrollContent: {
-    flexGrow: 1,
-    paddingHorizontal: Layout.spacing.lg,
-  },
-  animationContainer: {
-    alignItems: 'center',
-    marginTop: Layout.spacing.xl,
-    marginBottom: Layout.spacing.lg,
-  },
-  animation: {
-    // Additional styling for the animation if needed
-  },
-  header: {
-    alignItems: 'center',
-    marginTop: Layout.spacing.md,
-    marginBottom: Layout.spacing.xl,
-  },
-  title: {
-    fontSize: Layout.fontSize.title,
-    fontWeight: 'bold',
-    color: Colors.text,
-    textAlign: 'center',
-    marginBottom: Layout.spacing.sm,
-  },
-  subtitle: {
-    fontSize: Layout.fontSize.md,
-    color: Colors.textSecondary,
-    textAlign: 'center',
-    lineHeight: 22,
-  },
-  formContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    marginBottom: Layout.spacing.xl,
-  },
-  signUpButton: {
-    marginTop: Layout.spacing.md,
-  },
-  divider: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginVertical: Layout.spacing.lg,
-  },
-  dividerLine: {
-    flex: 1,
-    height: 1,
-    backgroundColor: Colors.border,
-  },
-  dividerText: {
-    marginHorizontal: Layout.spacing.md,
-    color: Colors.textSecondary,
-    fontSize: Layout.fontSize.sm,
-  },
-  googleButton: {
-    marginBottom: Layout.spacing.lg,
-  },
-  footer: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginTop: Layout.spacing.md,
-  },
-  footerText: {
-    color: Colors.textSecondary,
-    fontSize: Layout.fontSize.md,
-  },
-  loginLink: {
-    color: Colors.primary,
-    fontSize: Layout.fontSize.md,
-    fontWeight: '600',
-  },
+  container: { backgroundColor: Colors.background },
+  scrollContent: { flexGrow: 1, paddingHorizontal: Layout.spacing.lg },
+  animationContainer: { alignItems: 'center', marginTop: Layout.spacing.xl, marginBottom: Layout.spacing.lg },
+  animation: {},
+  header: { alignItems: 'center', marginTop: Layout.spacing.md, marginBottom: Layout.spacing.xl },
+  title: { fontSize: Layout.fontSize.title, fontWeight: 'bold', color: Colors.text, textAlign: 'center', marginBottom: Layout.spacing.sm },
+  subtitle: { fontSize: Layout.fontSize.md, color: Colors.textSecondary, textAlign: 'center', lineHeight: 22 },
+  formContainer: { flex: 1, justifyContent: 'center', marginBottom: Layout.spacing.xl },
+  signUpButton: { marginTop: Layout.spacing.md },
+  footer: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', marginTop: Layout.spacing.md },
+  footerText: { color: Colors.textSecondary, fontSize: Layout.fontSize.md },
+  loginLink: { color: Colors.primary, fontSize: Layout.fontSize.md, fontWeight: '600' },
 });

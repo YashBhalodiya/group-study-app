@@ -1,11 +1,30 @@
-import AWS from "aws-sdk";
-import { AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, AWS_REGION } from "@env";
+// awsConfig.ts
+// Placeholder config file for AWS (no actual AWS SDK usage)
 
-AWS.config.update({
-  region: AWS_REGION,
-  accessKeyId: AWS_ACCESS_KEY_ID,
-  secretAccessKey: AWS_SECRET_ACCESS_KEY,
-});
+export const dynamoDB = {
+  // Example method for getting data
+  get: async (params: any) => {
+    console.log('Called get with params:', params);
+    return {}; // return empty object or mock data
+  },
 
-const dynamoDB = new AWS.DynamoDB.DocumentClient();
-export default dynamoDB;	
+  // Example method for putting data
+  put: async (params: any) => {
+    console.log('Called put with params:', params);
+    return { success: true };
+  },
+
+  // Example method for updating data
+  update: async (params: any) => {
+    console.log('Called update with params:', params);
+    return { success: true };
+  },
+
+  // Example method for deleting data
+  delete: async (params: any) => {
+    console.log('Called delete with params:', params);
+    return { success: true };
+  },
+};
+
+export default dynamoDB;

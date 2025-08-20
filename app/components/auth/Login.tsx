@@ -8,6 +8,7 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Colors, Layout } from '../../constants';
 import { globalStyles } from '../../styles';
 import { AnimationView, Button, Input } from '../ui';
@@ -16,7 +17,7 @@ import { AnimationView, Button, Input } from '../ui';
 const studyAnimation = require('../../../assets/animations/study-placeholder.json');
 
 interface LoginProps {
-  onLoginSuccess?: () => void;
+  onLoginSuccess?: (token: string) => void; // Expect a token now
 }
 
 export const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
@@ -55,13 +56,19 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
 
     setLoading(true);
     try {
-      // Simulate API call
+      // Simulate API call for login
       await new Promise(resolve => setTimeout(resolve, 1500));
+
+      // Normally, you would call your backend API here and get a token
+      const fakeToken = 'abc123';
+
+      // Save token in AsyncStorage
+      await AsyncStorage.setItem('userToken', fakeToken);
+
       // Call the success callback if provided
       if (onLoginSuccess) {
-        onLoginSuccess();
+        onLoginSuccess(fakeToken); // ✅ pass the token
       } else {
-        // Fallback navigation
         router.replace('/(tabs)/groups');
       }
     } catch (error) {
@@ -182,9 +189,7 @@ const styles = StyleSheet.create({
     marginTop: Layout.spacing.xl,
     marginBottom: Layout.spacing.lg,
   },
-  animation: {
-    // Additional styling for the animation if needed
-  },
+  animation: {},
   formContainer: {
     flex: 1,
     justifyContent: 'center',
