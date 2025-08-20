@@ -2,10 +2,16 @@ import React, { useEffect, useState } from 'react';
 import {
   Alert,
   FlatList,
+  KeyboardAvoidingView,
+  Modal,
+  Platform,
+  Pressable,
   RefreshControl,
+  ScrollView,
   StatusBar,
   StyleSheet,
   Text,
+  TextInput,
   TouchableOpacity,
   View,
 } from 'react-native';
@@ -27,6 +33,13 @@ export default function GroupsDashboard() {
   const [groups, setGroups] = useState<Group[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [modalVisible, setModalVisible] = useState(false);
+  const [newGroup, setNewGroup] = useState({
+    name: '',
+    description: '',
+    subject: '',
+    code: '',
+  });
 
   // Mock data - replace with actual API calls
   const mockGroups: Group[] = [
@@ -89,8 +102,34 @@ export default function GroupsDashboard() {
   };
 
   const handleCreateGroup = () => {
-    // Navigate to create group screen or show modal
-    showToast('Create Group feature coming soon!');
+    setModalVisible(true);
+  };
+
+  const handleModalClose = () => {
+    setModalVisible(false);
+    setNewGroup({ name: '', description: '', subject: '', code: '' });
+  };
+
+  const handleModalSubmit = () => {
+    if (!newGroup.name || !newGroup.subject || !newGroup.code) {
+      showToast('Please fill all required fields');
+      return;
+    }
+    // Add the new group to the list (mock)
+    setGroups([
+      {
+        id: (groups.length + 1).toString(),
+        name: newGroup.name,
+        description: newGroup.description,
+        memberCount: 1,
+        isCreator: true,
+        subject: newGroup.subject,
+        code: newGroup.code,
+      },
+      ...groups,
+    ]);
+    handleModalClose();
+    showToast('Group created!');
   };
 
   const handleJoinGroup = () => {
@@ -203,6 +242,67 @@ export default function GroupsDashboard() {
         <Text style={styles.title}>Groups</Text>
       </View>
 
+      {/* Create Group Modal */}
+      <Modal
+        visible={modalVisible}
+        animationType="slide"
+        transparent
+        onRequestClose={handleModalClose}
+      >
+        <KeyboardAvoidingView
+          style={styles.modalOverlay}
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        >
+          <View style={styles.modalContainer}>
+            <Text style={styles.modalTitle}>Create New Group</Text>
+            <ScrollView contentContainerStyle={{ paddingBottom: 16 }}>
+              <Text style={styles.inputLabel}>Group Name *</Text>
+              <TextInput
+                style={styles.input}
+                placeholder="Enter group name"
+                placeholderTextColor={Colors.textSecondary}
+                value={newGroup.name}
+                onChangeText={text => setNewGroup({ ...newGroup, name: text })}
+              />
+              <Text style={styles.inputLabel}>Subject *</Text>
+              <TextInput
+                style={styles.input}
+                placeholder="Enter subject"
+                placeholderTextColor={Colors.textSecondary}
+                value={newGroup.subject}
+                onChangeText={text => setNewGroup({ ...newGroup, subject: text })}
+              />
+              <Text style={styles.inputLabel}>Group Code *</Text>
+              <TextInput
+                style={styles.input}
+                placeholder="Enter group code"
+                placeholderTextColor={Colors.textSecondary}
+                value={newGroup.code}
+                onChangeText={text => setNewGroup({ ...newGroup, code: text })}
+                autoCapitalize="characters"
+              />
+              <Text style={styles.inputLabel}>Description</Text>
+              <TextInput
+                style={[styles.input, { height: 80 }]}
+                placeholder="Enter description (optional)"
+                placeholderTextColor={Colors.textSecondary}
+                value={newGroup.description}
+                onChangeText={text => setNewGroup({ ...newGroup, description: text })}
+                multiline
+              />
+            </ScrollView>
+            <View style={styles.modalButtonRow}>
+              <Pressable style={styles.modalCancelButton} onPress={handleModalClose}>
+                <Text style={styles.modalCancelText}>Cancel</Text>
+              </Pressable>
+              <Pressable style={styles.modalCreateButton} onPress={handleModalSubmit}>
+                <Text style={styles.modalCreateText}>Create</Text>
+              </Pressable>
+            </View>
+          </View>
+        </KeyboardAvoidingView>
+      </Modal>
+
       {groups.length === 0 ? (
         renderEmptyState()
       ) : (
@@ -272,6 +372,9 @@ const styles = StyleSheet.create({
     marginBottom: 1,
     paddingVertical: Layout.spacing.md,
     paddingHorizontal: Layout.spacing.lg,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: Colors.border,
   },
   groupRow: {
     flexDirection: 'row',
@@ -281,7 +384,7 @@ const styles = StyleSheet.create({
     width: 48,
     height: 48,
     borderRadius: 8,
-    backgroundColor: '#e8f4f8',
+    backgroundColor: Colors.primary + '22',
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: Layout.spacing.md,
@@ -347,17 +450,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: Colors.primary,
-    paddingVertical: 14, // Slightly reduced padding
+    paddingVertical: 14,
     paddingHorizontal: Layout.spacing.md,
     borderRadius: 12,
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
-    elevation: 5,
+    // Remove shadow for consistency
   },
   createButtonIcon: {
     color: Colors.surface,
@@ -374,10 +470,10 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: 'transparent',
+    backgroundColor: Colors.surface,
     borderWidth: 2,
     borderColor: Colors.primary,
-    paddingVertical: 14, // Match the create button padding
+    paddingVertical: 14,
     paddingHorizontal: Layout.spacing.md,
     borderRadius: 12,
   },
@@ -385,5 +481,77 @@ const styles = StyleSheet.create({
     color: Colors.primary,
     fontSize: 14, // Match the create button text size
     fontWeight: '600',
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.2)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalContainer: {
+    width: '90%',
+    backgroundColor: Colors.surface,
+    borderRadius: 16,
+    padding: 24,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 8,
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: Colors.text,
+    marginBottom: 16,
+    textAlign: 'center',
+  },
+  inputLabel: {
+    fontSize: 14,
+    color: Colors.textSecondary,
+    marginBottom: 4,
+    marginTop: 12,
+  },
+  input: {
+    backgroundColor: Colors.background,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    fontSize: 15,
+    color: Colors.text,
+    marginBottom: 2,
+  },
+  modalButtonRow: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    marginTop: 20,
+    gap: 12,
+  },
+  modalCancelButton: {
+    paddingVertical: 10,
+    paddingHorizontal: 18,
+    borderRadius: 8,
+    backgroundColor: Colors.background,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    marginRight: 4,
+  },
+  modalCancelText: {
+    color: Colors.textSecondary,
+    fontWeight: '600',
+    fontSize: 15,
+  },
+  modalCreateButton: {
+    paddingVertical: 10,
+    paddingHorizontal: 18,
+    borderRadius: 8,
+    backgroundColor: Colors.primary,
+  },
+  modalCreateText: {
+    color: Colors.surface,
+    fontWeight: '600',
+    fontSize: 15,
   },
 });
