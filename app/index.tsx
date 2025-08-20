@@ -19,7 +19,7 @@ export default function Index() {
       setTimeout(() => {
         // For demo purposes, let's assume user is logged in
         // Change this to false to see login screen
-        setIsLoggedIn(true);
+        setIsLoggedIn(false); // Change to true to simulate logged in
         setIsLoading(false);
       }, 1000);
     } catch (error) {
