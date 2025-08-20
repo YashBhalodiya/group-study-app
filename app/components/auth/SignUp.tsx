@@ -75,19 +75,18 @@ export const SignUp: React.FC = () => {
     setLoading(true);
     try {
       // 👇 Call your backend API instead of Amplify
-      const response = await fetch("https://<your-api-gateway-url>/signup", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name,
-          email,
-          password, // ⚠️ In production, hash before storing
-        }),
-      });
+      const response = await fetch("https://nuym736dmc.execute-api.ap-south-1.amazonaws.com/default/SignFunction", {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({ name, email, password }),
+});
 
-      if (!response.ok) {
-        throw new Error("Signup failed");
-      }
+const data = await response.json().catch(() => null);
+console.log("API response:", response.status, data);
+
+if (!response.ok) {
+  throw new Error(data?.message || `Signup failed with status ${response.status}`);
+}
 
       alert("Signup successful!");
       router.replace('./Verify'); // Or go to dashboard
