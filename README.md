@@ -1,50 +1,115 @@
-# Welcome to your Expo app 👋
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+# Group Study App
 
-## Get started
+An open-source mobile app for students to create, join, and manage study groups. Built with React Native, Expo, and a modern design system.
 
-1. Install dependencies
+---
 
+## Table of Contents
+
+- [Features](#features)
+- [Screenshots](#screenshots)
+- [Tech Stack](#tech-stack)
+- [Getting Started](#getting-started)
+- [Project Structure](#project-structure)
+- [Design System](#design-system)
+- [Contributing](#contributing)
+- [License](#license)
+
+---
+
+## Features
+
+- **Authentication:** Sign up and log in securely.
+- **Dashboard:** View all groups you have joined or created.
+- **Create Group:** Start a new study group with subject, code, and description.
+- **Join Group:** Join existing groups using a unique code.
+- **Profile:** View and edit your profile, manage settings, and toggle preferences.
+- **Settings:** Access app settings and preferences.
+- **Modern UI:** Consistent, accessible, and responsive design using a custom color system.
+
+## Screenshots
+
+> _Add screenshots of the main screens here (Dashboard, Create Group Modal, Profile, etc.)_
+
+## Tech Stack
+
+- **React Native** (with [Expo](https://expo.dev))
+- **TypeScript**
+- **Expo Router** (file-based navigation)
+- **@expo/vector-icons** (Feather icons)
+- **react-native-safe-area-context** (Safe area handling)
+- **Custom Design System** (see `constants/Colors.ts`)
+
+## Getting Started
+
+### Prerequisites
+
+- [Node.js](https://nodejs.org/) (v16 or later recommended)
+- [npm](https://www.npmjs.com/) or [yarn](https://yarnpkg.com/)
+- [Expo CLI](https://docs.expo.dev/get-started/installation/)
+
+### Installation
+
+1. **Clone the repository:**
    ```bash
-   npm install
+   git clone https://github.com/YashBhalodiya/group-study-app.git
+   cd group-study-app
    ```
 
-2. Start the app
+2. **Install dependencies:**
+   ```bash
+   npm install
+   # or
+   yarn install
+   ```
 
+3. **Start the development server:**
    ```bash
    npx expo start
    ```
 
-In the output, you'll find options to open the app in a
+4. **Run on your device:**
+   - Use the QR code in your terminal or browser to open the app in Expo Go (Android/iOS)
+   - Or run on an emulator/simulator
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
+### Environment Variables
 
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
+If you use AWS Amplify or other services, configure your environment in the `amplify/` and `app/awsConfig.ts` files.
 
-## Get a fresh project
+## Project Structure
 
-When you're ready, run:
-
-```bash
-npm run reset-project
+```
+group-study-app/
+├── app/                  # Main app source (screens, navigation)
+│   ├── (tabs)/           # Tab navigation screens (groups, profile, settings, etc.)
+│   ├── components/       # Reusable UI components
+│   ├── constants/        # Design system (colors, layout)
+│   ├── styles/           # Global and shared styles
+│   └── ...
+├── assets/               # Images, fonts, animations
+├── amplify/              # AWS Amplify backend config (if used)
+├── package.json          # Project metadata and scripts
+├── tsconfig.json         # TypeScript config
+└── ...
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+## Design System
 
-## Learn more
+All colors and layout values are defined in `app/constants/Colors.ts` and `app/constants/Layout.ts`. Use these for all UI elements to ensure consistency.
 
-To learn more about developing your project with Expo, look at the following resources:
+## Contributing
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+Contributions are welcome! To contribute:
 
-## Join the community
+1. Fork the repository
+2. Create a new branch (`git checkout -b feature/your-feature`)
+3. Make your changes
+4. Commit and push (`git commit -m "Add your feature"`)
+5. Open a Pull Request
 
-Join our community of developers creating universal apps.
+Please follow the existing code style and add tests where appropriate.
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+## License
+
+This project is licensed under the MIT License. See [LICENSE](LICENSE) for details.
