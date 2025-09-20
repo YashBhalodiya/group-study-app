@@ -1,6 +1,6 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { router } from 'expo-router';
-import React, { useState } from 'react';
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { router } from "expo-router";
+import React, { useState } from "react";
 import {
   SafeAreaView,
   ScrollView,
@@ -8,23 +8,23 @@ import {
   Text,
   TouchableOpacity,
   View,
-} from 'react-native';
-import { Colors, Layout } from '../../constants';
-import { globalStyles } from '../../styles';
-import { AnimationView, Button, Input } from '../ui';
+} from "react-native";
+import { Colors, Layout } from "../../constants";
+import { globalStyles } from "../../styles";
+import { AnimationView, Button, Input } from "../ui";
 
 // Import the actual Lottie animation JSON placeholder
-const studyAnimation = require('../../../assets/animations/study-placeholder.json');
+const studyAnimation = require("../../../assets/animations/study-placeholder.json");
 
 interface LoginProps {
   onLoginSuccess?: (token: string) => void; // Expect a token now
 }
 
 export const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [emailError, setEmailError] = useState('');
-  const [passwordError, setPasswordError] = useState('');
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [emailError, setEmailError] = useState("");
+  const [passwordError, setPasswordError] = useState("");
   const [loading, setLoading] = useState(false);
 
   const validateEmail = (email: string) => {
@@ -33,53 +33,53 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
   };
 
   const handleLogin = async () => {
-    setEmailError('');
-    setPasswordError('');
+    setEmailError("");
+    setPasswordError("");
 
     // Validation
     if (!email) {
-      setEmailError('Email is required');
+      setEmailError("Email is required");
       return;
     }
     if (!validateEmail(email)) {
-      setEmailError('Please enter a valid email');
+      setEmailError("Please enter a valid email");
       return;
     }
     if (!password) {
-      setPasswordError('Password is required');
+      setPasswordError("Password is required");
       return;
     }
     if (password.length < 6) {
-      setPasswordError('Password must be at least 6 characters');
+      setPasswordError("Password must be at least 6 characters");
       return;
     }
 
     setLoading(true);
     try {
       // Simulate API call for login
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      await new Promise((resolve) => setTimeout(resolve, 1500));
 
       // Normally, you would call your backend API here and get a token
-      const fakeToken = 'abc123';
+      const fakeToken = "abc123";
 
       // Save token in AsyncStorage
-      await AsyncStorage.setItem('userToken', fakeToken);
+      await AsyncStorage.setItem("userToken", fakeToken);
 
       // Call the success callback if provided
       if (onLoginSuccess) {
         onLoginSuccess(fakeToken); // ✅ pass the token
       } else {
-        router.replace('/(tabs)/groups');
+        router.replace("/(tabs)/groups");
       }
     } catch (error) {
-      console.error('Login error:', error);
+      console.error("Login error:", error);
     } finally {
       setLoading(false);
     }
   };
 
   const handleSignUpPress = () => {
-    router.push('/signup');
+    router.push("/signup");
   };
 
   return (
@@ -141,7 +141,7 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
 
           <Button
             title="Sign Up with Google"
-            onPress={() => console.log('Google sign up')}
+            onPress={() => console.log("Google sign up")}
             variant="outline"
             style={styles.googleButton}
           />
@@ -167,40 +167,40 @@ const styles = StyleSheet.create({
     paddingHorizontal: Layout.spacing.lg,
   },
   header: {
-    alignItems: 'center',
+    alignItems: "center",
     marginTop: Layout.spacing.md,
     marginBottom: Layout.spacing.xl,
   },
   title: {
     fontSize: Layout.fontSize.title,
-    fontWeight: 'bold',
+    fontWeight: "bold",
     color: Colors.text,
-    textAlign: 'center',
+    textAlign: "center",
     marginBottom: Layout.spacing.sm,
   },
   subtitle: {
     fontSize: Layout.fontSize.md,
     color: Colors.textSecondary,
-    textAlign: 'center',
+    textAlign: "center",
     lineHeight: 22,
   },
   animationContainer: {
-    alignItems: 'center',
+    alignItems: "center",
     marginTop: Layout.spacing.xl,
     marginBottom: Layout.spacing.lg,
   },
   animation: {},
   formContainer: {
     flex: 1,
-    justifyContent: 'center',
+    justifyContent: "center",
     marginBottom: Layout.spacing.xl,
   },
   loginButton: {
     marginTop: Layout.spacing.md,
   },
   divider: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     marginVertical: Layout.spacing.lg,
   },
   dividerLine: {
@@ -217,9 +217,9 @@ const styles = StyleSheet.create({
     marginBottom: Layout.spacing.lg,
   },
   footer: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
     marginTop: Layout.spacing.md,
   },
   footerText: {
@@ -229,6 +229,6 @@ const styles = StyleSheet.create({
   signUpLink: {
     color: Colors.primary,
     fontSize: Layout.fontSize.md,
-    fontWeight: '600',
+    fontWeight: "600",
   },
 });
