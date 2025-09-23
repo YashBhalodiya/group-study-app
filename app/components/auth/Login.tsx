@@ -2,12 +2,12 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { router } from "expo-router";
 import React, { useState } from "react";
 import {
-  SafeAreaView,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
+    SafeAreaView,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
 } from "react-native";
 import { Colors, Layout } from "../../constants";
 import { globalStyles } from "../../styles";
@@ -56,23 +56,35 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
 
     setLoading(true);
     try {
-      // Simulate API call for login
-      await new Promise((resolve) => setTimeout(resolve, 1500));
+      // Simulate login without authentication
+      await new Promise((resolve) => setTimeout(resolve, 1000));
 
-      // Normally, you would call your backend API here and get a token
-      const fakeToken = "abc123";
+      // Create mock user data based on login email
+      const mockUser = {
+        id: "1",
+        name: email.split('@')[0].replace(/[._]/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
+        email: email,
+        bio: "",
+        avatarColor: "#F9C9A7",
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
 
-      // Save token in AsyncStorage
-      await AsyncStorage.setItem("userToken", fakeToken);
+      const mockToken = "mock_token_123";
+
+      // Save mock token and user data
+      await AsyncStorage.setItem("userToken", mockToken);
+      await AsyncStorage.setItem("userProfile", JSON.stringify(mockUser));
 
       // Call the success callback if provided
       if (onLoginSuccess) {
-        onLoginSuccess(fakeToken); // ✅ pass the token
+        onLoginSuccess(mockToken);
       } else {
         router.replace("/(tabs)/groups");
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error("Login error:", error);
+      alert(error.message || "Login failed. Please try again.");
     } finally {
       setLoading(false);
     }

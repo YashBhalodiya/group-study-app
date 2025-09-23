@@ -2,6 +2,7 @@ import { Redirect } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { Login } from './components/auth';
+import { UserService } from './services/userService';
 
 export default function Index() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -15,16 +16,21 @@ export default function Index() {
 
   const checkAuthStatus = async () => {
     try {
-      // Simulate auth check - replace with actual implementation
-      setTimeout(() => {
-        // For demo purposes, let's assume user is logged in
-        // Change this to false to see login screen
-        setIsLoggedIn(false); // Change to true to simulate logged in
-        setIsLoading(false);
-      }, 1000);
+      const token = await UserService.getUserToken();
+      const userProfile = await UserService.getUserProfile();
+      
+      if (token && userProfile) {
+        // User is logged in and has profile data
+        setIsLoggedIn(true);
+      } else {
+        // Clear any partial data
+        await UserService.clearUserData();
+        setIsLoggedIn(false);
+      }
     } catch (error) {
       console.error('Auth check failed:', error);
       setIsLoggedIn(false);
+    } finally {
       setIsLoading(false);
     }
   };

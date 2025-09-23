@@ -1,3 +1,4 @@
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { router } from "expo-router";
 import React, { useState } from "react";
 import {
@@ -74,27 +75,28 @@ export const SignUp: React.FC = () => {
 
     setLoading(true);
     try {
-      // 👇 Call your backend API instead of Amplify
-      const response = await fetch(
-        "https://nuym736dmc.execute-api.ap-south-1.amazonaws.com/default/SignFunction",
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ name, email, password }),
-        }
-      );
+      // Simulate signup without authentication
+      await new Promise((resolve) => setTimeout(resolve, 1000));
 
-      const data = await response.json().catch(() => null);
-      console.log("API response:", response.status, data);
+      // Create mock user data from signup form
+      const mockUser = {
+        id: "1",
+        name: name.trim(),
+        email: email.trim(),
+        bio: "",
+        avatarColor: "#F9C9A7",
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
 
-      if (!response.ok) {
-        throw new Error(
-          data?.message || `Signup failed with status ${response.status}`
-        );
-      }
+      const mockToken = "mock_token_123";
+
+      // Save mock token and user data
+      await AsyncStorage.setItem("userToken", mockToken);
+      await AsyncStorage.setItem("userProfile", JSON.stringify(mockUser));
 
       alert("Signup successful!");
-      router.replace("./Login"); // Or go to dashboard
+      router.replace("/(tabs)/groups"); // Go directly to dashboard
     } catch (error: any) {
       console.error("Sign up error:", error);
       alert(error.message || "Error signing up");
