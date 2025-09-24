@@ -1,18 +1,20 @@
 import { Feather, MaterialIcons } from '@expo/vector-icons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as DocumentPicker from 'expo-document-picker';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useEffect, useRef, useState } from 'react';
 import {
-    Alert,
-    Dimensions,
-    FlatList,
-    Modal,
-    ScrollView,
-    StatusBar,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View
+  Alert,
+  Dimensions,
+  FlatList,
+  Modal,
+  ScrollView,
+  StatusBar,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Colors } from '../constants';
@@ -26,9 +28,13 @@ interface Message {
     avatar?: string;
   };
   timestamp: Date;
-  type: 'text' | 'image' | 'file' | 'assignment' | 'announcement';
+  type: 'text' | 'image' | 'file' | 'assignment' | 'announcement' | 'meeting';
   fileUrl?: string;
   fileName?: string;
+  fileSize?: number;
+  meetingTitle?: string;
+  meetingLink?: string;
+  meetingDate?: Date;
   isOwn: boolean;
 }
 
@@ -58,6 +64,45 @@ interface GroupDetails {
   }>;
 }
 
+// Storage keys for group members
+const GROUPS_STORAGE_KEY = 'user_groups';
+
+// Function to load real group members from storage
+const loadGroupMembersFromStorage = async (groupId: string) => {
+  try {
+    const storedGroups = await AsyncStorage.getItem(GROUPS_STORAGE_KEY);
+    if (storedGroups) {
+      const groups = JSON.parse(storedGroups);
+      const currentGroup = groups.find((g: any) => g.id === groupId);
+      if (currentGroup && currentGroup.members) {
+        return currentGroup.members;
+      }
+    }
+    return [];
+  } catch (error) {
+    console.error('Error loading group members:', error);
+    return [];
+  }
+};
+
+// Function to save updated group members to storage
+const saveGroupMembersToStorage = async (groupId: string, members: any[]) => {
+  try {
+    const storedGroups = await AsyncStorage.getItem(GROUPS_STORAGE_KEY);
+    if (storedGroups) {
+      const groups = JSON.parse(storedGroups);
+      const updatedGroups = groups.map((group: any) => 
+        group.id === groupId 
+          ? { ...group, members: members, memberCount: members.length }
+          : group
+      );
+      await AsyncStorage.setItem(GROUPS_STORAGE_KEY, JSON.stringify(updatedGroups));
+    }
+  } catch (error) {
+    console.error('Error saving group members:', error);
+  }
+};
+
 export default function GroupChatScreen() {
   const { id, groupData } = useLocalSearchParams();
   const router = useRouter();
@@ -68,6 +113,13 @@ export default function GroupChatScreen() {
   const [showClassroomPanel, setShowClassroomPanel] = useState(false);
   const [showMembersModal, setShowMembersModal] = useState(false);
   const [showAssignmentModal, setShowAssignmentModal] = useState(false);
+  const [showMeetingModal, setShowMeetingModal] = useState(false);
+  const [newMeeting, setNewMeeting] = useState({
+    title: '',
+    date: '',
+    time: '',
+    link: '',
+  });
   const [newAssignment, setNewAssignment] = useState({
     title: '',
     description: '',
@@ -132,35 +184,35 @@ export default function GroupChatScreen() {
     members: generateMembers(currentGroup?.memberCount || 1),
   };
 
-  // Generate dynamic members based on group size
-  function generateMembers(memberCount: number) {
-    const allMembers = [
-      { id: '1', name: 'Dr. Smith', role: 'teacher' as const },
-      { id: '2', name: 'Jane Smith', role: 'student' as const },
-      { id: '3', name: 'Mike Johnson', role: 'student' as const },
-      { id: '4', name: 'Sarah Wilson', role: 'student' as const },
-      { id: '5', name: 'Alex Chen', role: 'student' as const },
-      { id: '6', name: 'Emma Davis', role: 'student' as const },
-      { id: '7', name: 'David Brown', role: 'student' as const },
-      { id: '8', name: 'Lisa Garcia', role: 'student' as const },
-      { id: '9', name: 'You', role: 'student' as const },
+  // Generate dynamic members based on actual group members
+  async function generateMembers(memberCount: number) {
+    // First try to load real members from storage
+    const realMembers = await loadGroupMembersFromStorage(id as string);
+    
+    if (realMembers && realMembers.length > 0) {
+      return realMembers;
+    }
+
+    // If no real members found, initialize with default creator and current user
+    const defaultMembers = [
+      { 
+        id: 'creator_' + (currentGroup?.code || 'unknown'), 
+        name: 'Group Creator', 
+        role: 'teacher' as const,
+        joinedAt: new Date()
+      },
+      { 
+        id: 'current_user', 
+        name: 'You', 
+        role: 'student' as const,
+        joinedAt: new Date()
+      },
     ];
 
-    // Always include the teacher and current user
-    const members = [allMembers[0]]; // Teacher
+    // Save these default members to storage
+    await saveGroupMembersToStorage(id as string, defaultMembers);
     
-    // Add other students based on member count (excluding teacher and current user)
-    const availableStudents = allMembers.slice(1, -1); // Exclude teacher and "You"
-    const studentsToAdd = Math.min(memberCount - 2, availableStudents.length); // -2 for teacher and "You"
-    
-    for (let i = 0; i < studentsToAdd; i++) {
-      members.push(availableStudents[i]);
-    }
-    
-    // Always add "You" at the end
-    members.push(allMembers[allMembers.length - 1]);
-    
-    return members;
+    return defaultMembers;
   }
 
   // Dynamic messages based on group
@@ -347,10 +399,30 @@ export default function GroupChatScreen() {
 
   useEffect(() => {
     loadGroupData();
+    
+    // Refresh data when screen comes into focus (e.g., after joining)
+    const interval = setInterval(() => {
+      loadGroupData();
+    }, 2000); // Refresh every 2 seconds
+    
+    return () => clearInterval(interval);
   }, []);
 
-  const loadGroupData = () => {
-    setGroupDetails(mockGroupDetails);
+  const loadGroupData = async () => {
+    const members = await generateMembers(currentGroup?.memberCount || 1);
+    
+    // Update mock group details with real members
+    const updatedGroupDetails: GroupDetails = {
+      id: id as string,
+      name: currentGroup?.name || 'Unknown Group',
+      description: currentGroup?.description || 'No description available',
+      memberCount: members.length, // Use actual member count
+      subject: currentGroup?.subject || 'General',
+      code: currentGroup?.code || 'UNKNOWN',
+      members: members,
+    };
+    
+    setGroupDetails(updatedGroupDetails);
     setMessages(mockMessages);
     setAssignments(mockAssignments);
   };
@@ -372,6 +444,79 @@ export default function GroupChatScreen() {
         flatListRef.current?.scrollToEnd({ animated: true });
       }, 100);
     }
+  };
+
+  const handleUploadMaterial = async () => {
+    try {
+      const result = await DocumentPicker.getDocumentAsync({
+        type: '*/*', // Allow all file types
+        copyToCacheDirectory: true,
+        multiple: false,
+      });
+
+      if (!result.canceled && result.assets && result.assets[0]) {
+        const file = result.assets[0];
+        
+        // Create a file message
+        const fileMessage: Message = {
+          id: Date.now().toString(),
+          text: `Uploaded: ${file.name}`,
+          sender: { id: '5', name: 'You' },
+          timestamp: new Date(),
+          type: 'file',
+          fileName: file.name,
+          fileSize: file.size || 0,
+          fileUrl: file.uri,
+          isOwn: true,
+        };
+        
+        setMessages(prev => [...prev, fileMessage]);
+        
+        // Auto scroll to bottom
+        setTimeout(() => {
+          flatListRef.current?.scrollToEnd({ animated: true });
+        }, 100);
+        
+        Alert.alert('Success', 'File uploaded successfully!');
+      }
+    } catch (error) {
+      console.error('Error picking document:', error);
+      Alert.alert('Error', 'Failed to upload file. Please try again.');
+    }
+  };
+
+  const createMeeting = () => {
+    if (!newMeeting.title || !newMeeting.date || !newMeeting.time || !newMeeting.link) {
+      Alert.alert('Error', 'Please fill all fields');
+      return;
+    }
+
+    // Combine date and time
+    const meetingDateTime = new Date(`${newMeeting.date}T${newMeeting.time}`);
+    
+    // Create meeting message
+    const meetingMessage: Message = {
+      id: Date.now().toString(),
+      text: `Meeting scheduled: ${newMeeting.title}`,
+      sender: { id: '5', name: 'You' },
+      timestamp: new Date(),
+      type: 'meeting',
+      meetingTitle: newMeeting.title,
+      meetingLink: newMeeting.link,
+      meetingDate: meetingDateTime,
+      isOwn: true,
+    };
+
+    setMessages(prev => [...prev, meetingMessage]);
+    setNewMeeting({ title: '', date: '', time: '', link: '' });
+    setShowMeetingModal(false);
+    
+    // Auto scroll to bottom
+    setTimeout(() => {
+      flatListRef.current?.scrollToEnd({ animated: true });
+    }, 100);
+    
+    Alert.alert('Success', 'Meeting scheduled successfully!');
   };
 
   const createAssignment = () => {
@@ -425,28 +570,101 @@ export default function GroupChatScreen() {
       {!item.isOwn && (
         <Text style={styles.senderName}>{item.sender.name}</Text>
       )}
-      <View style={[
-        styles.messageBubble,
-        item.isOwn ? styles.ownBubble : styles.otherBubble,
-        item.type === 'assignment' && styles.assignmentBubble
-      ]}>
-        {item.type === 'assignment' && (
-          <Feather name="clipboard" size={16} color={Colors.primary} style={styles.assignmentIcon} />
-        )}
-        <Text style={[
-          styles.messageText,
-          item.isOwn ? styles.ownMessageText : styles.otherMessageText,
-          item.type === 'assignment' && styles.assignmentText
+      
+      {item.type === 'file' ? (
+        // File message bubble
+        <View style={[
+          styles.messageBubble,
+          item.isOwn ? styles.ownBubble : styles.otherBubble,
+          styles.fileBubble
         ]}>
-          {item.text}
-        </Text>
-        <Text style={[
-          styles.messageTime,
-          item.isOwn ? styles.ownMessageTime : styles.otherMessageTime
+          <View style={styles.fileContainer}>
+            <Feather name="file" size={24} color={Colors.primary} />
+            <View style={styles.fileInfo}>
+              <Text style={styles.fileName}>{item.fileName}</Text>
+              {item.fileSize && (
+                <Text style={styles.fileSize}>
+                  {(item.fileSize / 1024 / 1024).toFixed(2)} MB
+                </Text>
+              )}
+            </View>
+            <TouchableOpacity 
+              style={styles.downloadButton}
+              onPress={() => Alert.alert('Download', `Downloading ${item.fileName}...`)}
+            >
+              <Feather name="download" size={16} color="#fff" />
+            </TouchableOpacity>
+          </View>
+          <Text style={[
+            styles.messageTime,
+            item.isOwn ? styles.ownMessageTime : styles.otherMessageTime
+          ]}>
+            {formatTime(item.timestamp)}
+          </Text>
+        </View>
+      ) : item.type === 'meeting' ? (
+        // Meeting message bubble
+        <View style={[
+          styles.messageBubble,
+          item.isOwn ? styles.ownBubble : styles.otherBubble,
+          styles.meetingBubble
         ]}>
-          {formatTime(item.timestamp)}
-        </Text>
-      </View>
+          <View style={styles.meetingContainer}>
+            <View style={styles.meetingHeader}>
+              <Feather name="video" size={20} color={Colors.primary} />
+              <Text style={styles.meetingTitle}>{item.meetingTitle}</Text>
+            </View>
+            <Text style={styles.meetingDate}>
+              {item.meetingDate?.toLocaleDateString()} at {item.meetingDate?.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+            </Text>
+            <TouchableOpacity 
+              style={styles.joinMeetingButton}
+              onPress={() => {
+                Alert.alert(
+                  'Join Meeting',
+                  `Would you like to join "${item.meetingTitle}"?`,
+                  [
+                    { text: 'Cancel', style: 'cancel' },
+                    { text: 'Join', onPress: () => Alert.alert('Opening meeting...', item.meetingLink) }
+                  ]
+                );
+              }}
+            >
+              <Text style={styles.joinMeetingText}>Join Meeting</Text>
+            </TouchableOpacity>
+          </View>
+          <Text style={[
+            styles.messageTime,
+            item.isOwn ? styles.ownMessageTime : styles.otherMessageTime
+          ]}>
+            {formatTime(item.timestamp)}
+          </Text>
+        </View>
+      ) : (
+        // Regular text/assignment message bubble
+        <View style={[
+          styles.messageBubble,
+          item.isOwn ? styles.ownBubble : styles.otherBubble,
+          item.type === 'assignment' && styles.assignmentBubble
+        ]}>
+          {item.type === 'assignment' && (
+            <Feather name="clipboard" size={16} color={Colors.primary} style={styles.assignmentIcon} />
+          )}
+          <Text style={[
+            styles.messageText,
+            item.isOwn ? styles.ownMessageText : styles.otherMessageText,
+            item.type === 'assignment' && styles.assignmentText
+          ]}>
+            {item.text}
+          </Text>
+          <Text style={[
+            styles.messageTime,
+            item.isOwn ? styles.ownMessageTime : styles.otherMessageTime
+          ]}>
+            {formatTime(item.timestamp)}
+          </Text>
+        </View>
+      )}
     </View>
   );
 
@@ -481,7 +699,9 @@ export default function GroupChatScreen() {
       </View>
       <View style={styles.memberInfo}>
         <Text style={styles.memberName}>{item.name}</Text>
-        <Text style={styles.memberRole}>{item.role}</Text>
+        <Text style={styles.memberRole}>
+          {item.role} {(item as any).joinedAt && ` • Joined ${new Date((item as any).joinedAt).toLocaleDateString()}`}
+        </Text>
       </View>
       {item.role === 'teacher' && (
         <Feather name="star" size={16} color={Colors.primary} />
@@ -584,34 +804,19 @@ export default function GroupChatScreen() {
           <ScrollView horizontal showsHorizontalScrollIndicator={false}>
             <TouchableOpacity 
               style={styles.classroomButton}
-              onPress={() => setShowAssignmentModal(true)}
+              onPress={handleUploadMaterial}
             >
-              <Feather name="plus-circle" size={20} color={Colors.primary} />
-              <Text style={styles.classroomButtonText}>New Assignment</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.classroomButton}>
               <Feather name="upload" size={20} color={Colors.primary} />
               <Text style={styles.classroomButtonText}>Upload Material</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={styles.classroomButton}>
-              <Feather name="calendar" size={20} color={Colors.primary} />
-              <Text style={styles.classroomButtonText}>Schedule</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.classroomButton}>
-              <Feather name="bar-chart-2" size={20} color={Colors.primary} />
-              <Text style={styles.classroomButtonText}>Grades</Text>
+            <TouchableOpacity 
+              style={styles.classroomButton}
+              onPress={() => setShowMeetingModal(true)}
+            >
+              <Feather name="video" size={20} color={Colors.primary} />
+              <Text style={styles.classroomButtonText}>Schedule Meeting</Text>
             </TouchableOpacity>
           </ScrollView>
-          
-          {/* Assignments List */}
-          <Text style={styles.sectionTitle}>Assignments</Text>
-          <FlatList
-            data={assignments}
-            renderItem={renderAssignment}
-            keyExtractor={item => item.id}
-            style={styles.assignmentsList}
-            showsVerticalScrollIndicator={false}
-          />
         </View>
       )}
 
@@ -749,6 +954,80 @@ export default function GroupChatScreen() {
               onPress={createAssignment}
             >
               <Text style={styles.createButtonText}>Create</Text>
+            </TouchableOpacity>
+          </View>
+        </SafeAreaView>
+      </Modal>
+
+      {/* Meeting Modal */}
+      <Modal
+        visible={showMeetingModal}
+        animationType="slide"
+        presentationStyle="pageSheet"
+      >
+        <SafeAreaView style={styles.modalContainer}>
+          <View style={styles.modalHeader}>
+            <Text style={styles.modalTitle}>Schedule Meeting</Text>
+            <TouchableOpacity onPress={() => setShowMeetingModal(false)}>
+              <Feather name="x" size={24} color={Colors.text} />
+            </TouchableOpacity>
+          </View>
+          
+          <ScrollView style={styles.assignmentForm}>
+            <Text style={styles.formLabel}>Meeting Title *</Text>
+            <TextInput
+              style={styles.formInput}
+              placeholder="Enter meeting title"
+              value={newMeeting.title}
+              onChangeText={(text) => setNewMeeting(prev => ({ ...prev, title: text }))}
+            />
+            
+            <Text style={styles.formLabel}>Date *</Text>
+            <TextInput
+              style={styles.formInput}
+              placeholder="YYYY-MM-DD"
+              value={newMeeting.date}
+              onChangeText={(text) => setNewMeeting(prev => ({ ...prev, date: text }))}
+            />
+            
+            <Text style={styles.formLabel}>Time *</Text>
+            <TextInput
+              style={styles.formInput}
+              placeholder="HH:MM (24-hour format)"
+              value={newMeeting.time}
+              onChangeText={(text) => setNewMeeting(prev => ({ ...prev, time: text }))}
+            />
+            
+            <Text style={styles.formLabel}>Meeting Link *</Text>
+            <TextInput
+              style={[styles.formInput, styles.textArea]}
+              placeholder="https://zoom.us/j/... or https://meet.google.com/..."
+              value={newMeeting.link}
+              onChangeText={(text) => setNewMeeting(prev => ({ ...prev, link: text }))}
+              multiline
+              numberOfLines={3}
+            />
+            
+            <View style={styles.meetingTipContainer}>
+              <Feather name="info" size={16} color={Colors.primary} />
+              <Text style={styles.meetingTip}>
+                Tip: You can use Zoom, Google Meet, Teams, or any other meeting platform link
+              </Text>
+            </View>
+          </ScrollView>
+          
+          <View style={styles.modalActions}>
+            <TouchableOpacity 
+              style={styles.cancelButton}
+              onPress={() => setShowMeetingModal(false)}
+            >
+              <Text style={styles.cancelButtonText}>Cancel</Text>
+            </TouchableOpacity>
+            <TouchableOpacity 
+              style={styles.createButton}
+              onPress={createMeeting}
+            >
+              <Text style={styles.createButtonText}>Schedule</Text>
             </TouchableOpacity>
           </View>
         </SafeAreaView>
@@ -1146,5 +1425,92 @@ const styles = StyleSheet.create({
   createButtonText: {
     color: '#fff',
     fontWeight: '600',
+  },
+  // File message styles
+  fileBubble: {
+    backgroundColor: '#f8f9fa',
+    borderWidth: 1,
+    borderColor: Colors.border,
+  },
+  fileContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 4,
+  },
+  fileInfo: {
+    flex: 1,
+    marginLeft: 12,
+  },
+  fileName: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: Colors.text,
+  },
+  fileSize: {
+    fontSize: 12,
+    color: Colors.textSecondary,
+    marginTop: 2,
+  },
+  downloadButton: {
+    backgroundColor: Colors.primary,
+    borderRadius: 16,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    marginLeft: 8,
+  },
+  // Meeting message styles
+  meetingBubble: {
+    backgroundColor: '#e8f5e8',
+    borderWidth: 1,
+    borderColor: Colors.success,
+  },
+  meetingContainer: {
+    paddingVertical: 4,
+  },
+  meetingHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  meetingTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: Colors.text,
+    marginLeft: 8,
+    flex: 1,
+  },
+  meetingDate: {
+    fontSize: 14,
+    color: Colors.textSecondary,
+    marginBottom: 12,
+  },
+  joinMeetingButton: {
+    backgroundColor: Colors.success,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 6,
+    alignItems: 'center',
+  },
+  joinMeetingText: {
+    color: '#fff',
+    fontWeight: '600',
+    fontSize: 14,
+  },
+  meetingTipContainer: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    backgroundColor: '#f0f8ff',
+    padding: 12,
+    borderRadius: 8,
+    marginTop: 16,
+    borderWidth: 1,
+    borderColor: Colors.primary + '20',
+  },
+  meetingTip: {
+    fontSize: 14,
+    color: Colors.textSecondary,
+    marginLeft: 8,
+    flex: 1,
+    lineHeight: 18,
   },
 });

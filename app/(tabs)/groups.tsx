@@ -1,3 +1,4 @@
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import {
@@ -114,6 +115,96 @@ export default function GroupsDashboard() {
     },
   ];
 
+  // Storage keys
+  const GROUPS_STORAGE_KEY = 'user_groups';
+  const MEMBERSHIPS_STORAGE_KEY = 'user_memberships';
+
+  // Storage functions
+  const saveGroupsToStorage = async (groupsData: Group[]) => {
+    try {
+      await AsyncStorage.setItem(GROUPS_STORAGE_KEY, JSON.stringify(groupsData));
+    } catch (error) {
+      console.error('Error saving groups to storage:', error);
+    }
+  };
+
+  const saveMembershipsToStorage = async (membershipsData: UserMembership[]) => {
+    try {
+      await AsyncStorage.setItem(MEMBERSHIPS_STORAGE_KEY, JSON.stringify(membershipsData));
+    } catch (error) {
+      console.error('Error saving memberships to storage:', error);
+    }
+  };
+
+  const loadGroupsFromStorage = async (): Promise<Group[]> => {
+    try {
+      const storedGroups = await AsyncStorage.getItem(GROUPS_STORAGE_KEY);
+      if (storedGroups) {
+        return JSON.parse(storedGroups);
+      }
+      return [];
+    } catch (error) {
+      console.error('Error loading groups from storage:', error);
+      return [];
+    }
+  };
+
+  const loadMembershipsFromStorage = async (): Promise<UserMembership[]> => {
+    try {
+      const storedMemberships = await AsyncStorage.getItem(MEMBERSHIPS_STORAGE_KEY);
+      if (storedMemberships) {
+        return JSON.parse(storedMemberships);
+      }
+      return [];
+    } catch (error) {
+      console.error('Error loading memberships from storage:', error);
+      return [];
+    }
+  };
+
+  // Function to add user to group members list
+  const addUserToGroupMembers = async (groupId: string, newMember: any) => {
+    try {
+      const storedGroups = await AsyncStorage.getItem(GROUPS_STORAGE_KEY);
+      if (storedGroups) {
+        const groups = JSON.parse(storedGroups);
+        const updatedGroups = groups.map((group: any) => {
+          if (group.id === groupId) {
+            // Initialize members array if it doesn't exist
+            if (!group.members) {
+              group.members = [
+                {
+                  id: 'creator_' + group.code,
+                  name: 'Group Creator',
+                  role: 'teacher',
+                  joinedAt: new Date(),
+                }
+              ];
+            }
+            
+            // Check if user is already a member
+            const existingMember = group.members.find((member: any) => 
+              member.name === newMember.name || member.id === newMember.id
+            );
+            
+            if (!existingMember) {
+              return {
+                ...group,
+                members: [...group.members, newMember],
+                memberCount: group.members.length + 1,
+              };
+            }
+          }
+          return group;
+        });
+        
+        await AsyncStorage.setItem(GROUPS_STORAGE_KEY, JSON.stringify(updatedGroups));
+      }
+    } catch (error) {
+      console.error('Error adding user to group members:', error);
+    }
+  };
+
   useEffect(() => {
     loadGroups();
   }, []);
@@ -121,12 +212,24 @@ export default function GroupsDashboard() {
   const loadGroups = async () => {
     setLoading(true);
     try {
-      // Replace this with actual API call
-      setTimeout(() => {
+      // Load saved groups and memberships from AsyncStorage
+      const savedGroups = await loadGroupsFromStorage();
+      const savedMemberships = await loadMembershipsFromStorage();
+      
+      // If no saved data, initialize with mock data for first-time users
+      if (savedGroups.length === 0) {
         setGroups(mockGroups);
         setUserMemberships(mockMemberships);
-        setLoading(false);
-      }, 1000);
+        // Save mock data as initial data
+        await saveGroupsToStorage(mockGroups);
+        await saveMembershipsToStorage(mockMemberships);
+      } else {
+        // Use saved data
+        setGroups(savedGroups);
+        setUserMemberships(savedMemberships);
+      }
+      
+      setLoading(false);
     } catch (error) {
       console.error('Error loading groups:', error);
       setLoading(false);
@@ -180,7 +283,7 @@ export default function GroupsDashboard() {
     setNewGroup({ name: '', description: '', subject: '', code: '' });
   };
 
-  const handleModalSubmit = () => {
+  const handleModalSubmit = async () => {
     if (!newGroup.name || !newGroup.subject) {
       showToast('Please fill all required fields');
       return;
@@ -189,9 +292,9 @@ export default function GroupsDashboard() {
     // Use the auto-generated code or generate a new one if somehow missing
     const groupCode = newGroup.code || generateUniqueGroupCode();
     
-    // Add the new group to the list (mock)
+    // Add the new group to the list
     const newGroupData: Group = {
-      id: (groups.length + 1).toString(),
+      id: Date.now().toString(), // Use timestamp for unique ID
       name: newGroup.name,
       description: newGroup.description,
       memberCount: 1,
@@ -200,6 +303,22 @@ export default function GroupsDashboard() {
       code: groupCode,
       isJoined: true,
       joinedAt: new Date(),
+    };
+
+    // Initialize group with creator as first member
+    const initialMembers = [
+      {
+        id: 'creator_' + groupCode,
+        name: 'You (Creator)',
+        role: 'teacher' as const,
+        joinedAt: new Date(),
+      }
+    ];
+
+    // Add members to the group data
+    const newGroupWithMembers = {
+      ...newGroupData,
+      members: initialMembers,
     };
     
     // Add membership record for the creator
@@ -210,8 +329,17 @@ export default function GroupsDashboard() {
       role: 'creator',
     };
     
-    setGroups([newGroupData, ...groups]);
-    setUserMemberships([newMembership, ...userMemberships]);
+    // Update state
+    const updatedGroups = [newGroupWithMembers, ...groups];
+    const updatedMemberships = [newMembership, ...userMemberships];
+    
+    setGroups(updatedGroups);
+    setUserMemberships(updatedMemberships);
+    
+    // Save to AsyncStorage
+    await saveGroupsToStorage(updatedGroups);
+    await saveMembershipsToStorage(updatedMemberships);
+    
     handleModalClose();
     
     // Show success message with the group code
@@ -365,7 +493,7 @@ export default function GroupsDashboard() {
           },
           {
             text: 'Join Group',
-            onPress: () => {
+            onPress: async () => {
               // Add user to the group
               const updatedGroup: Group = {
                 ...groupToJoin,
@@ -385,19 +513,34 @@ export default function GroupsDashboard() {
               };
 
               // Update groups list
+              let updatedGroups: Group[];
               if (groupToJoin.id.startsWith('temp_')) {
                 // This was a new group, add it to the list
-                setGroups([updatedGroup, ...groups]);
+                updatedGroups = [updatedGroup, ...groups];
+                setGroups(updatedGroups);
               } else {
                 // Update existing group
-                const updatedGroups = groups.map(group => 
+                updatedGroups = groups.map(group => 
                   group.code === code ? updatedGroup : group
                 );
                 setGroups(updatedGroups);
               }
 
               // Add membership
-              setUserMemberships([newMembership, ...userMemberships]);
+              const updatedMemberships = [newMembership, ...userMemberships];
+              setUserMemberships(updatedMemberships);
+              
+              // Add current user to the group's members list
+              await addUserToGroupMembers(updatedGroup.id, {
+                id: 'current_user_' + Date.now(),
+                name: 'You',
+                role: 'student' as const,
+                joinedAt: new Date(),
+              });
+              
+              // Save to AsyncStorage
+              saveGroupsToStorage(updatedGroups);
+              saveMembershipsToStorage(updatedMemberships);
               
               Alert.alert(
                 'Successfully Joined!',
@@ -620,79 +763,81 @@ export default function GroupsDashboard() {
         animationType="slide"
         presentationStyle="pageSheet"
       >
-        <KeyboardAvoidingView 
-          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-          style={styles.modalContainer}
-        >
-          <View style={styles.modalContent}>
-            <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Join Group</Text>
-              <TouchableOpacity onPress={handleJoinModalClose}>
-                <Text style={styles.modalCloseButton}>✕</Text>
-              </TouchableOpacity>
-            </View>
-            
-            <View style={styles.joinModalBody}>
-              <Text style={styles.joinModalDescription}>
-                Enter the 6-character group code shared by your instructor or classmates to join their study group.
-              </Text>
+        <SafeAreaView style={{ flex: 1, backgroundColor: Colors.surface }}>
+          <KeyboardAvoidingView 
+            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+            style={{ flex: 1 }}
+          >
+            <View style={{ flex: 1, padding: 24 }}>
+              <View style={styles.modalHeader}>
+                <Text style={styles.modalTitle}>Join Group</Text>
+                <TouchableOpacity onPress={handleJoinModalClose}>
+                  <Text style={styles.modalCloseButton}>✕</Text>
+                </TouchableOpacity>
+              </View>
               
-              <Text style={styles.inputLabel}>Group Code *</Text>
-              <TextInput
-                style={[styles.input, styles.joinCodeInput]}
-                placeholder="Enter 6-character code (e.g., ABC123)"
-                placeholderTextColor={Colors.textSecondary}
-                value={joinCode}
-                onChangeText={setJoinCode}
-                autoCapitalize="characters"
-                maxLength={6}
-                autoFocus={true}
-              />
-              
-              <View style={styles.joinModalExamples}>
-                <Text style={styles.examplesTitle}>Example codes to try:</Text>
-                <View style={styles.exampleCodesContainer}>
-                  <TouchableOpacity 
-                    style={styles.exampleCode}
-                    onPress={() => setJoinCode('CHEM01')}
-                  >
-                    <Text style={styles.exampleCodeText}>CHEM01</Text>
-                    <Text style={styles.exampleCodeSubject}>Chemistry</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity 
-                    style={styles.exampleCode}
-                    onPress={() => setJoinCode('ML2024')}
-                  >
-                    <Text style={styles.exampleCodeText}>ML2024</Text>
-                    <Text style={styles.exampleCodeSubject}>Computer Science</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity 
-                    style={styles.exampleCode}
-                    onPress={() => setJoinCode('ESP101')}
-                  >
-                    <Text style={styles.exampleCodeText}>ESP101</Text>
-                    <Text style={styles.exampleCodeSubject}>Languages</Text>
-                  </TouchableOpacity>
+              <View style={styles.joinModalBody}>
+                <Text style={styles.joinModalDescription}>
+                  Enter the group code to join a study group
+                </Text>
+                
+                <Text style={styles.inputLabel}>Group Code</Text>
+                <TextInput
+                  style={[styles.input, styles.joinCodeInput]}
+                  placeholder="Enter code"
+                  placeholderTextColor={Colors.textSecondary}
+                  value={joinCode}
+                  onChangeText={setJoinCode}
+                  autoCapitalize="characters"
+                  maxLength={6}
+                  autoFocus={true}
+                />
+                
+                <View style={styles.joinModalExamples}>
+                  <Text style={styles.examplesTitle}>Try these example codes:</Text>
+                  <View style={styles.exampleCodesContainer}>
+                    <TouchableOpacity 
+                      style={styles.exampleCode}
+                      onPress={() => setJoinCode('CHEM01')}
+                    >
+                      <Text style={styles.exampleCodeText}>CHEM01</Text>
+                      <Text style={styles.exampleCodeSubject}>Chemistry</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity 
+                      style={styles.exampleCode}
+                      onPress={() => setJoinCode('ML2024')}
+                    >
+                      <Text style={styles.exampleCodeText}>ML2024</Text>
+                      <Text style={styles.exampleCodeSubject}>ML</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity 
+                      style={styles.exampleCode}
+                      onPress={() => setJoinCode('ESP101')}
+                    >
+                      <Text style={styles.exampleCodeText}>ESP101</Text>
+                      <Text style={styles.exampleCodeSubject}>Spanish</Text>
+                    </TouchableOpacity>
+                  </View>
                 </View>
               </View>
-            </View>
 
-            <View style={styles.modalButtonRow}>
-              <Pressable style={styles.modalCancelButton} onPress={handleJoinModalClose}>
-                <Text style={styles.modalCancelText}>Cancel</Text>
-              </Pressable>
-              <Pressable 
-                style={[styles.modalCreateButton, !joinCode.trim() && styles.modalButtonDisabled]} 
-                onPress={handleJoinSubmit}
-                disabled={!joinCode.trim()}
-              >
-                <Text style={[styles.modalCreateText, !joinCode.trim() && styles.modalButtonTextDisabled]}>
-                  Join Group
-                </Text>
-              </Pressable>
+              <View style={styles.modalButtonRow}>
+                <Pressable style={styles.modalCancelButton} onPress={handleJoinModalClose}>
+                  <Text style={styles.modalCancelText}>Cancel</Text>
+                </Pressable>
+                <Pressable 
+                  style={[styles.modalCreateButton, !joinCode.trim() && styles.modalButtonDisabled]} 
+                  onPress={handleJoinSubmit}
+                  disabled={!joinCode.trim()}
+                >
+                  <Text style={[styles.modalCreateText, !joinCode.trim() && styles.modalButtonTextDisabled]}>
+                    Join Group
+                  </Text>
+                </Pressable>
+              </View>
             </View>
-          </View>
-        </KeyboardAvoidingView>
+          </KeyboardAvoidingView>
+        </SafeAreaView>
       </Modal>
 
       {groups.length === 0 ? (
@@ -943,8 +1088,22 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: '700',
     color: Colors.text,
-    marginBottom: 16,
-    textAlign: 'center',
+    flex: 1,
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 20,
+    paddingBottom: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.border,
+  },
+  modalCloseButton: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: Colors.textSecondary,
+    padding: 4,
   },
   inputLabel: {
     fontSize: 14,
@@ -1033,16 +1192,21 @@ const styles = StyleSheet.create({
   },
   joinCodeInput: {
     textAlign: 'center',
-    fontSize: 18,
-    fontWeight: '600',
-    letterSpacing: 2,
+    fontSize: 20,
+    fontWeight: '700',
+    letterSpacing: 3,
     textTransform: 'uppercase',
+    borderWidth: 2,
+    borderColor: Colors.primary,
+    backgroundColor: '#fff',
+    paddingVertical: 16,
+    marginBottom: 8,
   },
   joinModalExamples: {
-    marginTop: 30,
+    marginTop: 24,
     padding: 16,
     backgroundColor: Colors.background,
-    borderRadius: 8,
+    borderRadius: 12,
     borderWidth: 1,
     borderColor: Colors.border,
   },
@@ -1057,26 +1221,28 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-around',
     flexWrap: 'wrap',
-    gap: 8,
+    gap: 10,
   },
   exampleCode: {
-    padding: 12,
-    backgroundColor: '#fff',
-    borderRadius: 6,
+    padding: 8,
+    backgroundColor: Colors.primary + '10',
+    borderRadius: 16,
     borderWidth: 1,
-    borderColor: Colors.primary,
+    borderColor: Colors.primary + '30',
     alignItems: 'center',
-    minWidth: 80,
+    minWidth: 70,
+    paddingHorizontal: 12,
   },
   exampleCodeText: {
-    fontSize: 12,
-    fontWeight: 'bold',
+    fontSize: 11,
+    fontWeight: '700',
     color: Colors.primary,
-    marginBottom: 2,
+    marginBottom: 1,
   },
   exampleCodeSubject: {
-    fontSize: 10,
+    fontSize: 9,
     color: Colors.textSecondary,
+    textAlign: 'center',
   },
   modalButtonDisabled: {
     backgroundColor: Colors.border,
