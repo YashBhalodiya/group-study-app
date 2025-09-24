@@ -14,6 +14,9 @@
     "categories": {
       "auth": {
         "groupstudyapp620165a6": {}
+      },
+      "storage": {
+        "s3d45573fa": {}
       }
     }
   }
