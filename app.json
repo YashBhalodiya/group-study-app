@@ -38,6 +38,9 @@
     ],
     "experiments": {
       "typedRoutes": true
+    },
+    "extra": {
+      "EXPO_PUBLIC_UPLOAD_URL": "https://nz4hrjcuxeh665c5plwuu22eoq0xoavo.lambda-url.ap-south-1.on.aws/"
     }
   }
 }

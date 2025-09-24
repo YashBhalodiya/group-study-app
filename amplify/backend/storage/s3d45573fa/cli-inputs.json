@@ -1,0 +1,14 @@
+{
+  "resourceName": "s3d45573fa",
+  "policyUUID": "d45573fa",
+  "bucketName": "groupstudyapp0981558ca6fa453c8c20edc1d4662c3c",
+  "storageAccess": "auth",
+  "guestAccess": [],
+  "authAccess": [
+    "CREATE_AND_UPDATE",
+    "READ",
+    "DELETE"
+  ],
+  "triggerFunction": "NONE",
+  "groupAccess": {}
+}
