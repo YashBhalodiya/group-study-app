@@ -1,8 +1,6 @@
 
-// Using backend pre-signed URLs instead of Amplify client upload
 import { Feather } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
-import Constants from 'expo-constants';
 import * as ImagePicker from 'expo-image-picker';
 import { router } from 'expo-router';
 import React, { useCallback, useState } from 'react';
@@ -23,14 +21,6 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { EditProfileModal } from '../components/ui';
 import { Colors, Layout } from '../constants';
 import { UserProfile, UserService } from '../services/userService';
-// Lightweight UUID v4 generator (no crypto.getRandomValues dependency)
-function generateUuidV4() {
-  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
-    const r = Math.random() * 16 | 0;
-    const v = c === 'x' ? r : (r & 0x3) | 0x8;
-    return v.toString(16);
-  });
-}
 
 export default function ProfileTab() {
   const [darkMode, setDarkMode] = useState(false);
@@ -63,78 +53,40 @@ export default function ProfileTab() {
 
   // Handle profile update
   const handleProfileUpdate = useCallback(async (updates: Partial<UserProfile>) => {
-  try {
-    const updatedProfile = await UserService.updateUserProfile(updates);
-    if (updatedProfile) {
-      setUserProfile(updatedProfile);
+    try {
+      const updatedProfile = await UserService.updateUserProfile(updates);
+      if (updatedProfile) {
+        setUserProfile(updatedProfile);
+      }
+    } catch (error: any) {
+      throw error;
     }
-  } catch (error: any) {
-    throw error;
-  }
-}, []);
+  }, []);
+
   const handleChangeProfilePicture = async () => {
-  try {
-    // 1. Pick image
-    let result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      allowsEditing: true,
-      aspect: [1, 1],
-      quality: 1,
-    });
+    try {
+      // Pick image from library
+      let result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        aspect: [1, 1],
+        quality: 1,
+      });
 
-    if (result.canceled) return;
+      if (result.canceled) return;
 
-    const uri = result.assets[0].uri;
-    const response = await fetch(uri);
-    const blob = await response.blob();
-   const fileKey = `profilePics/${generateUuidV4()}.jpg`;
+      const uri = result.assets[0].uri;
+      
+      // For now, just store the local URI (no cloud storage)
+      // In a real app, you might want to implement local file storage or use a different service
+      await handleProfileUpdate({ profilePic: uri });
 
-   // Request pre-signed URL from backend
-   const endpoint =
-     process.env.EXPO_PUBLIC_UPLOAD_URL ||
-     (Constants?.expoConfig as any)?.extra?.EXPO_PUBLIC_UPLOAD_URL ||
-     (Constants as any)?.manifest2?.extra?.EXPO_PUBLIC_UPLOAD_URL;
-   if (!endpoint) {
-     throw new Error('Missing EXPO_PUBLIC_UPLOAD_URL');
-   }
-  const presignRes = await fetch(endpoint, {
-     method: 'POST',
-     headers: { 'Content-Type': 'application/json' },
-     body: JSON.stringify({ key: fileKey, contentType: 'image/jpeg' }),
-   });
-   if (!presignRes.ok) {
-     const text = await presignRes.text().catch(() => '');
-     throw new Error(`Presign failed: ${presignRes.status} ${text}`);
-   }
-   const { uploadUrl, fileUrl } = await presignRes.json();
-
-   // Upload image directly to S3
-   let putRes = await fetch(uploadUrl, {
-     method: 'PUT',
-     headers: { 'Content-Type': 'image/jpeg' },
-     body: blob,
-   });
-   if (!putRes.ok && (putRes.status === 400 || putRes.status === 403)) {
-     // Retry without header in case signature doesn't include Content-Type
-     putRes = await fetch(uploadUrl, {
-       method: 'PUT',
-       body: blob,
-     });
-   }
-   if (!putRes.ok) {
-     const text = await putRes.text().catch(() => '');
-     throw new Error(`Upload failed: ${putRes.status} ${text}`);
-   }
-
-    // Update profile in DynamoDB via UserService
-    await handleProfileUpdate({ profilePic: fileUrl });
-
-    Alert.alert('Success', 'Profile picture updated!');
-  } catch (error) {
-    console.error('Error uploading profile picture:', error);
-    Alert.alert('Error', 'Failed to update profile picture');
-  }
-};
+      Alert.alert('Success', 'Profile picture updated locally!');
+    } catch (error) {
+      console.error('Error updating profile picture:', error);
+      Alert.alert('Error', 'Failed to update profile picture');
+    }
+  };
 
   // Handle logout
   const handleLogout = useCallback(async () => {
@@ -142,7 +94,7 @@ export default function ProfileTab() {
       await UserService.clearUserData();
       // Reset navigation and go to login (index)
       router.dismissAll();
-      router.replace('./app/components/auth/Login.tsx');
+      router.replace('/');
     } catch (e) {
       Alert.alert('Logout failed', 'Please try again.');
     }

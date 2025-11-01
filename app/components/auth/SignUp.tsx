@@ -11,7 +11,7 @@ import {
 } from "react-native";
 import { Colors, Layout } from "../../constants";
 import { globalStyles } from "../../styles";
-import { AnimationView, Button, Input } from "../ui";
+import { Button, Input } from "../ui";
 
 // Import the actual Lottie animation JSON placeholder
 const studyAnimation = require("../../../assets/animations/study-placeholder.json");
@@ -115,14 +115,6 @@ export const SignUp: React.FC = () => {
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        <View style={styles.animationContainer}>
-          <AnimationView
-            source={studyAnimation}
-            width={200}
-            height={200}
-            style={styles.animation}
-          />
-        </View>
 
         <View style={styles.header}>
           <Text style={styles.title}>Welcome to StudyHub</Text>

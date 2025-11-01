@@ -2,19 +2,17 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { router } from "expo-router";
 import React, { useState } from "react";
 import {
-    SafeAreaView,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
+  SafeAreaView,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native";
 import { Colors, Layout } from "../../constants";
 import { globalStyles } from "../../styles";
-import { AnimationView, Button, Input } from "../ui";
+import { Button, Input } from "../ui";
 
-// Import the actual Lottie animation JSON placeholder
-const studyAnimation = require("../../../assets/animations/study-placeholder.json");
 
 interface LoginProps {
   onLoginSuccess?: (token: string) => void; // Expect a token now
@@ -100,14 +98,6 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        <View style={styles.animationContainer}>
-          <AnimationView
-            source={studyAnimation}
-            width={200}
-            height={200}
-            style={styles.animation}
-          />
-        </View>
 
         <View style={styles.header}>
           <Text style={styles.title}>Welcome to StudyHub</Text>
@@ -196,12 +186,6 @@ const styles = StyleSheet.create({
     textAlign: "center",
     lineHeight: 22,
   },
-  animationContainer: {
-    alignItems: "center",
-    marginTop: Layout.spacing.xl,
-    marginBottom: Layout.spacing.lg,
-  },
-  animation: {},
   formContainer: {
     flex: 1,
     justifyContent: "center",

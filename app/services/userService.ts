@@ -81,12 +81,6 @@ export class UserService {
       // Save updated profile locally
       await this.saveUserProfile(updatedProfile);
 
-      // Attempt to persist to backend if configured
-      try {
-        await this.persistProfileRemote(updatedProfile);
-      } catch (remoteError) {
-        console.warn('Remote persistence skipped/failed:', remoteError);
-      }
       return updatedProfile;
     } catch (error) {
       console.error('Error updating user profile:', error);
@@ -111,23 +105,5 @@ export class UserService {
     ];
     const index = name.charCodeAt(0) % colors.length;
     return colors[index];
-  }
-
-  // Optional remote persistence via API Gateway / backend
-  private static async persistProfileRemote(profile: UserProfile): Promise<void> {
-    const endpoint = process.env.EXPO_PUBLIC_DDB_WRITE_URL;
-    if (!endpoint) {
-      throw new Error('EXPO_PUBLIC_DDB_WRITE_URL not set');
-    }
-
-    const response = await fetch(endpoint, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(profile),
-    });
-    if (!response.ok) {
-      const text = await response.text().catch(() => '');
-      throw new Error(`Remote persistence failed: ${response.status} ${text}`);
-    }
   }
 }
