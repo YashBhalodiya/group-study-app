@@ -1,4 +1,3 @@
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import { router } from "expo-router";
 import React, { useState } from "react";
 import {
@@ -9,7 +8,9 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import Toast from 'react-native-toast-message';
 import { Colors, Layout } from "../../constants";
+import { AuthService } from "../../services/authService";
 import { globalStyles } from "../../styles";
 import { Button, Input } from "../ui";
 
@@ -54,35 +55,45 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
 
     setLoading(true);
     try {
-      // Simulate login without authentication
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      // Sign in with Firebase
+      const user = await AuthService.signIn(email, password);
+      
+      // Check if email is verified
+      const isVerified = await AuthService.isEmailVerified();
+      
+      if (!isVerified) {
+        // Email not verified, redirect to verification screen
+        Toast.show({
+          type: 'info',
+          text1: 'Email Verification Required',
+          text2: 'Please verify your email before accessing the app.',
+          visibilityTime: 4000,
+        });
+        router.replace("/email-verification");
+        return;
+      }
 
-      // Create mock user data based on login email
-      const mockUser = {
-        id: "1",
-        name: email.split('@')[0].replace(/[._]/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
-        email: email,
-        bio: "",
-        avatarColor: "#F9C9A7",
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      };
-
-      const mockToken = "mock_token_123";
-
-      // Save mock token and user data
-      await AsyncStorage.setItem("userToken", mockToken);
-      await AsyncStorage.setItem("userProfile", JSON.stringify(mockUser));
+      // Email is verified, proceed with login
+      Toast.show({
+        type: 'success',
+        text1: 'Welcome Back! 👋',
+        text2: 'You have successfully logged in.',
+      });
 
       // Call the success callback if provided
       if (onLoginSuccess) {
-        onLoginSuccess(mockToken);
+        onLoginSuccess(user.uid);
       } else {
         router.replace("/(tabs)/groups");
       }
     } catch (error: any) {
       console.error("Login error:", error);
-      alert(error.message || "Login failed. Please try again.");
+      setPasswordError(error.message || "Login failed. Please try again.");
+      Toast.show({
+        type: 'error',
+        text1: 'Login Failed',
+        text2: error.message || "Please check your credentials and try again.",
+      });
     } finally {
       setLoading(false);
     }

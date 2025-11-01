@@ -1,4 +1,3 @@
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import { router } from "expo-router";
 import React, { useState } from "react";
 import {
@@ -9,7 +8,9 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import Toast from 'react-native-toast-message';
 import { Colors, Layout } from "../../constants";
+import { AuthService } from "../../services/authService";
 import { globalStyles } from "../../styles";
 import { Button, Input } from "../ui";
 
@@ -75,31 +76,43 @@ export const SignUp: React.FC = () => {
 
     setLoading(true);
     try {
-      // Simulate signup without authentication
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-
-      // Create mock user data from signup form
-      const mockUser = {
-        id: "1",
-        name: name.trim(),
-        email: email.trim(),
-        bio: "",
-        avatarColor: "#F9C9A7",
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      };
-
-      const mockToken = "mock_token_123";
-
-      // Save mock token and user data
-      await AsyncStorage.setItem("userToken", mockToken);
-      await AsyncStorage.setItem("userProfile", JSON.stringify(mockUser));
-
-      alert("Signup successful!");
-      router.replace("/(tabs)/groups"); // Go directly to dashboard
+      // Sign up with Firebase
+      const user = await AuthService.signUp(email.trim(), password, name.trim());
+      
+      // Show success toast
+      Toast.show({
+        type: 'success',
+        text1: 'Account Created Successfully! 🎉',
+        text2: 'Please check your email and verify your account before logging in.',
+        visibilityTime: 6000,
+      });
+      
+      router.replace("/"); // Navigate to login screen
     } catch (error: any) {
       console.error("Sign up error:", error);
-      alert(error.message || "Error signing up");
+      
+      // Set appropriate error message based on error type
+      if (error.message.includes("email")) {
+        setEmailError(error.message);
+        Toast.show({
+          type: 'error',
+          text1: 'Email Error',
+          text2: error.message,
+        });
+      } else if (error.message.includes("password")) {
+        setPasswordError(error.message);
+        Toast.show({
+          type: 'error',
+          text1: 'Password Error',
+          text2: error.message,
+        });
+      } else {
+        Toast.show({
+          type: 'error',
+          text1: 'Signup Failed',
+          text2: error.message || "Error creating account",
+        });
+      }
     } finally {
       setLoading(false);
     }

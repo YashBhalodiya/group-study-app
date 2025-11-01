@@ -20,6 +20,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { EditProfileModal } from '../components/ui';
 import { Colors, Layout } from '../constants';
+import { AuthService } from '../services/authService';
 import { UserProfile, UserService } from '../services/userService';
 
 export default function ProfileTab() {
@@ -43,6 +44,34 @@ export default function ProfileTab() {
       setLoading(false);
     }
   }, []);
+
+  // Subscribe to real-time profile updates
+  useFocusEffect(
+    useCallback(() => {
+      let unsubscribe: (() => void) | null = null;
+
+      const setupRealtimeSync = async () => {
+        // Initial load
+        await loadUserProfile();
+
+        // Subscribe to real-time updates
+        unsubscribe = UserService.subscribeToProfileUpdates((profile) => {
+          if (profile) {
+            setUserProfile(profile);
+            setLoading(false);
+          }
+        });
+      };
+
+      setupRealtimeSync();
+
+      return () => {
+        if (unsubscribe) {
+          unsubscribe();
+        }
+      };
+    }, [loadUserProfile])
+  );
 
   // Refresh profile data
   const onRefresh = useCallback(async () => {
@@ -91,21 +120,13 @@ export default function ProfileTab() {
   // Handle logout
   const handleLogout = useCallback(async () => {
     try {
-      await UserService.clearUserData();
-      // Reset navigation and go to login (index)
-      router.dismissAll();
-      router.replace('/');
-    } catch (e) {
-      Alert.alert('Logout failed', 'Please try again.');
+      await AuthService.signOut();
+      // router.dismissAll();
+      router.replace('/components/auth/Login');
+    } catch (error: any) {
+      Alert.alert('Logout failed', error.message || 'Please try again.');
     }
   }, []);
-
-  // Load profile when screen focuses
-  useFocusEffect(
-    useCallback(() => {
-      loadUserProfile();
-    }, [loadUserProfile])
-  );
 
   // Show loading state
   if (loading) {
