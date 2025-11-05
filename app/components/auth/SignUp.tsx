@@ -14,9 +14,6 @@ import { AuthService } from "../../services/authService";
 import { globalStyles } from "../../styles";
 import { Button, Input } from "../ui";
 
-// Import the actual Lottie animation JSON placeholder
-const studyAnimation = require("../../../assets/animations/study-placeholder.json");
-
 export const SignUp: React.FC = () => {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
