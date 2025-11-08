@@ -19,12 +19,14 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { EditProfileModal } from '../components/ui';
-import { Colors, Layout } from '../constants';
+import { Layout } from '../constants';
+import { useTheme } from '../contexts/ThemeContext';
 import { AuthService } from '../services/authService';
 import { UserProfile, UserService } from '../services/userService';
 
 export default function ProfileTab() {
-  const [darkMode, setDarkMode] = useState(false);
+  const { isDarkMode, toggleTheme, colors } = useTheme();
+  const styles = useThemedStyles(colors);
   const [notifications, setNotifications] = useState(false);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
@@ -133,7 +135,7 @@ export default function ProfileTab() {
     return (
       <SafeAreaView style={styles.container} edges={['top']}>
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={Colors.primary} />
+          <ActivityIndicator size="large" color={colors.primary} />
           <Text style={styles.loadingText}>Loading profile...</Text>
         </View>
       </SafeAreaView>
@@ -145,7 +147,7 @@ export default function ProfileTab() {
     return (
       <SafeAreaView style={styles.container} edges={['top']}>
         <View style={styles.errorContainer}>
-          <Feather name="user-x" size={64} color={Colors.textSecondary} />
+          <Feather name="user-x" size={64} color={colors.textSecondary} />
           <Text style={styles.errorTitle}>Profile Not Found</Text>
           <Text style={styles.errorText}>
             Unable to load your profile. Please try again.
@@ -160,7 +162,7 @@ export default function ProfileTab() {
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
-      <StatusBar barStyle="dark-content" backgroundColor={Colors.surface} />
+      <StatusBar barStyle={isDarkMode ? "light-content" : "dark-content"} backgroundColor={colors.surface} />
       <ScrollView
         style={styles.scrollView}
         refreshControl={
@@ -175,7 +177,7 @@ export default function ProfileTab() {
             style={styles.editIcon}
             onPress={() => setEditModalVisible(true)}
           >
-            <Feather name="edit-2" size={20} color={Colors.text} />
+            <Feather name="edit-2" size={20} color={colors.text} />
           </TouchableOpacity>
         </View>
 
@@ -185,7 +187,7 @@ export default function ProfileTab() {
             {userProfile.profilePic ? (
               <Image source={{ uri: userProfile.profilePic }} style={styles.avatarImage} resizeMode="cover" />
             ) : (
-              <Feather name="user" size={56} color={Colors.text} />
+              <Feather name="user" size={56} color={colors.text} />
             )}
           </View>
           <Text style={styles.name}>{userProfile.name}</Text>
@@ -203,19 +205,20 @@ export default function ProfileTab() {
             onPress={() => setEditModalVisible(true)}
           >
             <Text style={styles.settingsLabel}>Edit Profile</Text>
-            <Feather name="chevron-right" size={20} color={Colors.textSecondary} />
+            <Feather name="chevron-right" size={20} color={colors.textSecondary} />
           </TouchableOpacity>
           <TouchableOpacity style={styles.settingsItem} onPress={handleChangeProfilePicture}>
             <Text style={styles.settingsLabel}>Change Profile Picture</Text>
-            <Feather name="chevron-right" size={20} color={Colors.textSecondary} />
+            <Feather name="chevron-right" size={20} color={colors.textSecondary} />
           </TouchableOpacity>
           <View style={styles.settingsItem}>
             <Text style={styles.settingsLabel}>Dark Mode</Text>
             <Switch
-              value={darkMode}
-              onValueChange={setDarkMode}
-              trackColor={{ false: Colors.border, true: Colors.primary }}
-              thumbColor={darkMode ? Colors.primary : '#fff'}
+              value={isDarkMode}
+              onValueChange={toggleTheme}
+              trackColor={{ false: colors.border, true: colors.primary }}
+              thumbColor={isDarkMode ? "#fff" : colors.background}
+              ios_backgroundColor={colors.border}
             />
           </View>
           <View style={styles.settingsItem}>
@@ -223,8 +226,9 @@ export default function ProfileTab() {
             <Switch
               value={notifications}
               onValueChange={setNotifications}
-              trackColor={{ false: Colors.border, true: Colors.primary }}
-              thumbColor={notifications ? Colors.primary : '#fff'}
+              trackColor={{ false: colors.border, true: colors.primary }}
+              thumbColor={notifications ? "#fff" : colors.background}
+              ios_backgroundColor={colors.border}
             />
           </View>
           <TouchableOpacity 
@@ -248,140 +252,5 @@ export default function ProfileTab() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: Colors.background,
-  },
-  scrollView: {
-    flex: 1,
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  loadingText: {
-    marginTop: Layout.spacing.md,
-    fontSize: 16,
-    color: Colors.textSecondary,
-  },
-  errorContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingHorizontal: Layout.spacing.lg,
-  },
-  errorTitle: {
-    fontSize: 20,
-    fontWeight: '600',
-    color: Colors.text,
-    marginTop: Layout.spacing.lg,
-    marginBottom: Layout.spacing.sm,
-  },
-  errorText: {
-    fontSize: 16,
-    color: Colors.textSecondary,
-    textAlign: 'center',
-    marginBottom: Layout.spacing.xl,
-  },
-  retryButton: {
-    backgroundColor: Colors.primary,
-    paddingHorizontal: Layout.spacing.lg,
-    paddingVertical: Layout.spacing.md,
-    borderRadius: 12,
-  },
-  retryButtonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: Layout.spacing.lg,
-    paddingTop: Layout.spacing.lg,
-    paddingBottom: Layout.spacing.md,
-  },
-  headerTitle: {
-    fontSize: 20,
-    fontWeight: '600',
-    color: Colors.text,
-  },
-  editIcon: {
-    padding: 6,
-    borderRadius: 16,
-  },
-  avatarSection: {
-    alignItems: 'center',
-    marginBottom: Layout.spacing.xl,
-    paddingHorizontal: Layout.spacing.lg,
-  },
-  avatar: {
-    width: 96,
-    height: 96,
-    borderRadius: 48,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: Layout.spacing.md,
-  },
-  avatarImage: {
-    width: '100%',
-    height: '100%',
-  },
-  name: {
-    fontSize: 22,
-    fontWeight: '700',
-    color: Colors.text,
-    textAlign: 'center',
-    marginBottom: Layout.spacing.xs,
-  },
-  email: {
-    fontSize: 15,
-    color: Colors.textSecondary,
-    textAlign: 'center',
-    marginBottom: Layout.spacing.sm,
-  },
-  bio: {
-    fontSize: 14,
-    color: Colors.textSecondary,
-    textAlign: 'center',
-    lineHeight: 20,
-    marginBottom: Layout.spacing.lg,
-    paddingHorizontal: Layout.spacing.md,
-  },
-  settingsSection: {
-    marginHorizontal: Layout.spacing.lg,
-    backgroundColor: Colors.surface,
-    borderRadius: 16,
-    padding: Layout.spacing.lg,
-    marginBottom: Layout.spacing.xl,
-  },
-  settingsTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: Colors.text,
-    marginBottom: Layout.spacing.md,
-  },
-  settingsItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingVertical: Layout.spacing.md,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.border,
-  },
-  settingsLabel: {
-    fontSize: 15,
-    color: Colors.text,
-  },
-  logoutItem: {
-    borderBottomWidth: 0,
-  },
-  logoutText: {
-    fontSize: 15,
-    color: '#FF6B6B',
-    fontWeight: '500',
-  },
-});
+// Move to using themed styles
+import { useThemedStyles } from '../styles/themedStyles';

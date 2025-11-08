@@ -19,7 +19,8 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Button } from '../components/ui/Button';
-import { Colors, Layout } from '../constants';
+import { Layout } from '../constants';
+import { useTheme } from '../contexts/ThemeContext';
 
 interface Group {
   id: string;
@@ -42,6 +43,7 @@ interface UserMembership {
 
 export default function GroupsDashboard() {
   const router = useRouter();
+  const { isDarkMode, colors } = useTheme();
   const [groups, setGroups] = useState<Group[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -610,32 +612,44 @@ export default function GroupsDashboard() {
   };
 
   const renderGroupItem = ({ item }: { item: Group }) => (
-    <TouchableOpacity style={styles.groupCard} onPress={() => handleGroupPress(item)}>
+    <TouchableOpacity 
+      style={[
+        styles.groupCard, 
+        { 
+          backgroundColor: colors.surface,
+          borderColor: colors.border 
+        }
+      ]} 
+      onPress={() => handleGroupPress(item)}
+    >
       <View style={styles.groupRow}>
-        <View style={styles.groupIcon}>
+        <View style={[styles.groupIcon, { backgroundColor: colors.primary + '22' }]}>
           <Text style={styles.iconText}>{getSubjectIcon(item.subject)}</Text>
         </View>
         <View style={styles.groupDetails}>
           <View style={styles.groupHeader}>
-            <Text style={styles.groupName}>{item.name}</Text>
+            <Text style={[styles.groupName, { color: colors.text }]}>{item.name}</Text>
             {item.isCreator && (
-              <View style={styles.creatorBadge}>
+              <View style={[styles.creatorBadge, { backgroundColor: colors.primary }]}>
                 <Text style={styles.creatorText}>Creator</Text>
               </View>
             )}
           </View>
-          <Text style={styles.groupActivity}>
+          <Text style={[styles.groupActivity, { color: colors.textSecondary }]}>
             {item.memberCount} members • {getLastActivityText(item.memberCount)}
           </Text>
           {item.isCreator && (
-            <View style={styles.codeRow}>
-              <Text style={styles.codeLabel}>Code: </Text>
-              <Text style={styles.codeText}>{item.code}</Text>
+            <View style={[styles.codeRow, { borderTopColor: colors.border }]}>
+              <Text style={[styles.codeLabel, { color: colors.textSecondary }]}>Code: </Text>
+              <Text style={[styles.codeText, { color: colors.primary }]}>{item.code}</Text>
               <TouchableOpacity 
-                style={styles.copyCodeButton}
+                style={[styles.copyCodeButton, { 
+                  backgroundColor: colors.background,
+                  borderColor: colors.primary 
+                }]}
                 onPress={() => showToast(`Group code ${item.code} copied!`)}
               >
-                <Text style={styles.copyCodeText}>Copy</Text>
+                <Text style={[styles.copyCodeText, { color: colors.primary }]}>Copy</Text>
               </TouchableOpacity>
             </View>
           )}
@@ -669,20 +683,20 @@ export default function GroupsDashboard() {
 
   if (loading) {
     return (
-      <SafeAreaView style={styles.container} edges={['top']}>
-        <StatusBar barStyle="dark-content" backgroundColor={Colors.surface} />
+      <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={['top']}>
+        <StatusBar barStyle={isDarkMode ? "light-content" : "dark-content"} backgroundColor={colors.surface} />
         <View style={styles.loadingContainer}>
-          <Text style={styles.loadingText}>Loading your groups...</Text>
+          <Text style={[styles.loadingText, { color: colors.textSecondary }]}>Loading your groups...</Text>
         </View>
       </SafeAreaView>
     );
   }
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
-      <StatusBar barStyle="dark-content" backgroundColor={Colors.surface} />
-      <View style={styles.header}>
-        <Text style={styles.title}>Groups</Text>
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={['top']}>
+      <StatusBar barStyle={isDarkMode ? "light-content" : "dark-content"} backgroundColor={colors.surface} />
+      <View style={[styles.header, { backgroundColor: colors.surface }]}>
+        <Text style={[styles.title, { color: colors.text }]}>Groups</Text>
       </View>
 
       {/* Create Group Modal */}
@@ -701,32 +715,48 @@ export default function GroupsDashboard() {
             <ScrollView contentContainerStyle={{ paddingBottom: 16 }}>
               <Text style={styles.inputLabel}>Group Name *</Text>
               <TextInput
-                style={styles.input}
+                style={[styles.input, { 
+                  backgroundColor: colors.background,
+                  borderColor: colors.border,
+                  color: colors.text
+                }]}
                 placeholder="Enter group name"
-                placeholderTextColor={Colors.textSecondary}
+                placeholderTextColor={colors.textSecondary}
                 value={newGroup.name}
                 onChangeText={text => setNewGroup({ ...newGroup, name: text })}
               />
-              <Text style={styles.inputLabel}>Subject *</Text>
+              <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>Subject *</Text>
               <TextInput
-                style={styles.input}
+                style={[styles.input, { 
+                  backgroundColor: colors.background,
+                  borderColor: colors.border,
+                  color: colors.text
+                }]}
                 placeholder="Enter subject"
-                placeholderTextColor={Colors.textSecondary}
+                placeholderTextColor={colors.textSecondary}
                 value={newGroup.subject}
                 onChangeText={text => setNewGroup({ ...newGroup, subject: text })}
               />
               <Text style={styles.inputLabel}>Group Code (Auto-generated)</Text>
               <View style={styles.codeContainer}>
                 <TextInput
-                  style={[styles.input, styles.codeInput]}
+                  style={[
+                    styles.input, 
+                    styles.codeInput, 
+                    { 
+                      backgroundColor: colors.background,
+                      borderColor: colors.border,
+                      color: colors.text
+                    }
+                  ]}
                   placeholder="Code will be generated automatically"
-                  placeholderTextColor={Colors.textSecondary}
+                  placeholderTextColor={colors.textSecondary}
                   value={newGroup.code}
                   editable={false}
                   selectTextOnFocus={true}
                 />
                 <TouchableOpacity 
-                  style={styles.regenerateButton}
+                  style={[styles.regenerateButton, { backgroundColor: colors.primary }]}
                   onPress={() => {
                     const newCode = generateUniqueGroupCode();
                     setNewGroup({ ...newGroup, code: newCode });
@@ -735,11 +765,19 @@ export default function GroupsDashboard() {
                   <Text style={styles.regenerateButtonText}>↻</Text>
                 </TouchableOpacity>
               </View>
-              <Text style={styles.inputLabel}>Description</Text>
+              <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>Description</Text>
               <TextInput
-                style={[styles.input, { height: 80 }]}
+                style={[
+                  styles.input, 
+                  { 
+                    height: 80,
+                    backgroundColor: colors.background,
+                    borderColor: colors.border,
+                    color: colors.text
+                  }
+                ]}
                 placeholder="Enter description (optional)"
-                placeholderTextColor={Colors.textSecondary}
+                placeholderTextColor={colors.textSecondary}
                 value={newGroup.description}
                 onChangeText={text => setNewGroup({ ...newGroup, description: text })}
                 multiline
@@ -763,29 +801,43 @@ export default function GroupsDashboard() {
         animationType="slide"
         presentationStyle="pageSheet"
       >
-        <SafeAreaView style={{ flex: 1, backgroundColor: Colors.surface }}>
+        <SafeAreaView style={{ flex: 1, backgroundColor: colors.surface }}>
           <KeyboardAvoidingView 
             behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
             style={{ flex: 1 }}
           >
             <View style={{ flex: 1, padding: 24 }}>
-              <View style={styles.modalHeader}>
-                <Text style={styles.modalTitle}>Join Group</Text>
+              <View style={[
+            styles.modalHeader, 
+            { 
+              borderBottomColor: colors.border,
+              backgroundColor: colors.surface 
+            }
+          ]}>
+                <Text style={[styles.modalTitle, { color: colors.text }]}>Join Group</Text>
                 <TouchableOpacity onPress={handleJoinModalClose}>
-                  <Text style={styles.modalCloseButton}>✕</Text>
+                  <Text style={[styles.modalCloseButton, { color: colors.textSecondary }]}>✕</Text>
                 </TouchableOpacity>
               </View>
               
-              <View style={styles.joinModalBody}>
-                <Text style={styles.joinModalDescription}>
+              <View style={[styles.joinModalBody, { backgroundColor: colors.surface }]}>
+                <Text style={[styles.joinModalDescription, { color: colors.textSecondary }]}>
                   Enter the group code to join a study group
                 </Text>
                 
-                <Text style={styles.inputLabel}>Group Code</Text>
+                <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>Group Code</Text>
                 <TextInput
-                  style={[styles.input, styles.joinCodeInput]}
+                  style={[
+                    styles.input, 
+                    styles.joinCodeInput,
+                    { 
+                      backgroundColor: colors.background,
+                      borderColor: colors.border,
+                      color: colors.text 
+                    }
+                  ]}
                   placeholder="Enter code"
-                  placeholderTextColor={Colors.textSecondary}
+                  placeholderTextColor={colors.textSecondary}
                   value={joinCode}
                   onChangeText={setJoinCode}
                   autoCapitalize="characters"
@@ -793,44 +845,87 @@ export default function GroupsDashboard() {
                   autoFocus={true}
                 />
                 
-                <View style={styles.joinModalExamples}>
-                  <Text style={styles.examplesTitle}>Try these example codes:</Text>
+                <View style={[
+                  styles.joinModalExamples,
+                  {
+                    backgroundColor: colors.background,
+                    borderColor: colors.border
+                  }
+                ]}>
+                  <Text style={[styles.examplesTitle, { color: colors.text }]}>Try these example codes:</Text>
                   <View style={styles.exampleCodesContainer}>
                     <TouchableOpacity 
-                      style={styles.exampleCode}
+                      style={[
+                        styles.exampleCode,
+                        {
+                          backgroundColor: colors.primary + '10',
+                          borderColor: colors.primary + '30'
+                        }
+                      ]}
                       onPress={() => setJoinCode('CHEM01')}
                     >
-                      <Text style={styles.exampleCodeText}>CHEM01</Text>
-                      <Text style={styles.exampleCodeSubject}>Chemistry</Text>
+                      <Text style={[styles.exampleCodeText, { color: colors.primary }]}>CHEM01</Text>
+                      <Text style={[styles.exampleCodeSubject, { color: colors.textSecondary }]}>Chemistry</Text>
                     </TouchableOpacity>
                     <TouchableOpacity 
-                      style={styles.exampleCode}
+                      style={[
+                        styles.exampleCode,
+                        {
+                          backgroundColor: colors.primary + '10',
+                          borderColor: colors.primary + '30'
+                        }
+                      ]}
                       onPress={() => setJoinCode('ML2024')}
                     >
-                      <Text style={styles.exampleCodeText}>ML2024</Text>
-                      <Text style={styles.exampleCodeSubject}>ML</Text>
+                      <Text style={[styles.exampleCodeText, { color: colors.primary }]}>ML2024</Text>
+                      <Text style={[styles.exampleCodeSubject, { color: colors.textSecondary }]}>ML</Text>
                     </TouchableOpacity>
                     <TouchableOpacity 
-                      style={styles.exampleCode}
+                      style={[
+                        styles.exampleCode,
+                        {
+                          backgroundColor: colors.primary + '10',
+                          borderColor: colors.primary + '30'
+                        }
+                      ]}
                       onPress={() => setJoinCode('ESP101')}
                     >
-                      <Text style={styles.exampleCodeText}>ESP101</Text>
-                      <Text style={styles.exampleCodeSubject}>Spanish</Text>
+                      <Text style={[styles.exampleCodeText, { color: colors.primary }]}>ESP101</Text>
+                      <Text style={[styles.exampleCodeSubject, { color: colors.textSecondary }]}>Spanish</Text>
                     </TouchableOpacity>
                   </View>
                 </View>
               </View>
 
               <View style={styles.modalButtonRow}>
-                <Pressable style={styles.modalCancelButton} onPress={handleJoinModalClose}>
-                  <Text style={styles.modalCancelText}>Cancel</Text>
+                <Pressable 
+                  style={[
+                    styles.modalCancelButton, 
+                    { 
+                      backgroundColor: colors.background,
+                      borderColor: colors.border 
+                    }
+                  ]} 
+                  onPress={handleJoinModalClose}
+                >
+                  <Text style={[styles.modalCancelText, { color: colors.textSecondary }]}>Cancel</Text>
                 </Pressable>
                 <Pressable 
-                  style={[styles.modalCreateButton, !joinCode.trim() && styles.modalButtonDisabled]} 
+                  style={[
+                    styles.modalCreateButton, 
+                    { backgroundColor: colors.primary },
+                    !joinCode.trim() && { backgroundColor: colors.border }
+                  ]} 
                   onPress={handleJoinSubmit}
                   disabled={!joinCode.trim()}
                 >
-                  <Text style={[styles.modalCreateText, !joinCode.trim() && styles.modalButtonTextDisabled]}>
+                  <Text 
+                    style={[
+                      styles.modalCreateText, 
+                      { color: colors.surface },
+                      !joinCode.trim() && { color: colors.textSecondary }
+                    ]}
+                  >
                     Join Group
                   </Text>
                 </Pressable>
@@ -853,8 +948,8 @@ export default function GroupsDashboard() {
               <RefreshControl
                 refreshing={refreshing}
                 onRefresh={onRefresh}
-                colors={[Colors.primary]}
-                tintColor={Colors.primary}
+                colors={[colors.primary]}
+                tintColor={colors.primary}
               />
             }
             showsVerticalScrollIndicator={false}
@@ -877,18 +972,15 @@ export default function GroupsDashboard() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.background,
   },
   header: {
     paddingHorizontal: Layout.spacing.lg,
     paddingTop: Layout.spacing.lg,
     paddingBottom: Layout.spacing.md,
-    backgroundColor: Colors.surface,
   },
   title: {
     fontSize: 24,
     fontWeight: '600',
-    color: Colors.text,
   },
   loadingContainer: {
     flex: 1,
@@ -897,21 +989,18 @@ const styles = StyleSheet.create({
   },
   loadingText: {
     fontSize: Layout.fontSize.md,
-    color: Colors.textSecondary,
   },
   listContainer: {
     paddingTop: Layout.spacing.sm,
-    paddingBottom: 110, // Space for floating button + tab bar
+    paddingBottom: 110,
   },
   groupCard: {
-    backgroundColor: Colors.surface,
     marginHorizontal: Layout.spacing.lg,
     marginBottom: 1,
     paddingVertical: Layout.spacing.md,
     paddingHorizontal: Layout.spacing.lg,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: Colors.border,
   },
   groupRow: {
     flexDirection: 'row',
@@ -921,7 +1010,6 @@ const styles = StyleSheet.create({
     width: 48,
     height: 48,
     borderRadius: 8,
-    backgroundColor: Colors.primary + '22',
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: Layout.spacing.md,
@@ -932,23 +1020,20 @@ const styles = StyleSheet.create({
   groupDetails: {
     flex: 1,
   },
-  groupName: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: Colors.text,
-    marginBottom: 4,
-  },
-  groupActivity: {
-    fontSize: 14,
-    color: Colors.textSecondary,
-  },
   groupHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: 4,
   },
+  groupName: {
+    fontSize: 16,
+    fontWeight: '600',
+    marginBottom: 4,
+  },
+  groupActivity: {
+    fontSize: 14,
+  },
   creatorBadge: {
-    backgroundColor: Colors.primary,
     paddingHorizontal: 8,
     paddingVertical: 2,
     borderRadius: 10,
@@ -965,29 +1050,23 @@ const styles = StyleSheet.create({
     marginTop: 4,
     paddingTop: 4,
     borderTopWidth: 1,
-    borderTopColor: Colors.border,
   },
   codeLabel: {
     fontSize: 12,
-    color: Colors.textSecondary,
   },
   codeText: {
     fontSize: 12,
     fontWeight: '600',
-    color: Colors.primary,
     marginRight: 8,
   },
   copyCodeButton: {
-    backgroundColor: Colors.background,
     paddingHorizontal: 8,
     paddingVertical: 2,
     borderRadius: 4,
     borderWidth: 1,
-    borderColor: Colors.primary,
   },
   copyCodeText: {
     fontSize: 10,
-    color: Colors.primary,
     fontWeight: '600',
   },
   emptyContainer: {
@@ -1003,13 +1082,11 @@ const styles = StyleSheet.create({
   emptyTitle: {
     fontSize: Layout.fontSize.title,
     fontWeight: 'bold',
-    color: Colors.text,
     textAlign: 'center',
     marginBottom: Layout.spacing.sm,
   },
   emptySubtitle: {
     fontSize: Layout.fontSize.md,
-    color: Colors.textSecondary,
     textAlign: 'center',
     lineHeight: 22,
     marginBottom: Layout.spacing.xl,
@@ -1023,48 +1100,41 @@ const styles = StyleSheet.create({
   },
   createButtonContainer: {
     position: 'absolute',
-    bottom: 120, // Increased space above the tab bar
+    bottom: 120,
     left: Layout.spacing.lg,
     right: Layout.spacing.lg,
     flexDirection: 'row',
-    gap: Layout.spacing.sm, // Reduced gap for better alignment
+    gap: Layout.spacing.sm,
   },
   createButton: {
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: Colors.primary,
     paddingVertical: 14,
     paddingHorizontal: Layout.spacing.md,
     borderRadius: 12,
-    // Remove shadow for consistency
   },
   createButtonIcon: {
-    color: Colors.surface,
-    fontSize: 18, // Slightly smaller icon
+    fontSize: 18,
     fontWeight: '600',
     marginRight: Layout.spacing.xs,
   },
   createButtonText: {
-    color: Colors.surface,
-    fontSize: 14, // Reduced font size for better fit
+    fontSize: 14,
     fontWeight: '600',
   },
   joinButton: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: Colors.surface,
-    borderWidth: 2,
-    borderColor: Colors.primary,
     paddingVertical: 14,
     paddingHorizontal: Layout.spacing.md,
     borderRadius: 12,
+    borderWidth: 2,
   },
   joinButtonText: {
-    color: Colors.primary,
-    fontSize: 14, // Match the create button text size
+    fontSize: 14,
     fontWeight: '600',
   },
   modalOverlay: {
@@ -1075,7 +1145,6 @@ const styles = StyleSheet.create({
   },
   modalContainer: {
     width: '90%',
-    backgroundColor: Colors.surface,
     borderRadius: 16,
     padding: 24,
     shadowColor: '#000',
@@ -1087,7 +1156,6 @@ const styles = StyleSheet.create({
   modalTitle: {
     fontSize: 20,
     fontWeight: '700',
-    color: Colors.text,
     flex: 1,
   },
   modalHeader: {
@@ -1097,29 +1165,23 @@ const styles = StyleSheet.create({
     marginBottom: 20,
     paddingBottom: 16,
     borderBottomWidth: 1,
-    borderBottomColor: Colors.border,
   },
   modalCloseButton: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: Colors.textSecondary,
     padding: 4,
   },
   inputLabel: {
     fontSize: 14,
-    color: Colors.textSecondary,
     marginBottom: 4,
     marginTop: 12,
   },
   input: {
-    backgroundColor: Colors.background,
     borderWidth: 1,
-    borderColor: Colors.border,
     borderRadius: 8,
     paddingHorizontal: 12,
     paddingVertical: 10,
     fontSize: 15,
-    color: Colors.text,
     marginBottom: 2,
   },
   codeContainer: {
@@ -1131,11 +1193,8 @@ const styles = StyleSheet.create({
     flex: 1,
     marginBottom: 0,
     marginRight: 8,
-    backgroundColor: '#f8f9fa',
-    color: Colors.text,
   },
   regenerateButton: {
-    backgroundColor: Colors.primary,
     borderRadius: 6,
     paddingVertical: 10,
     paddingHorizontal: 12,
@@ -1158,13 +1217,10 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     paddingHorizontal: 18,
     borderRadius: 8,
-    backgroundColor: Colors.background,
     borderWidth: 1,
-    borderColor: Colors.border,
     marginRight: 4,
   },
   modalCancelText: {
-    color: Colors.textSecondary,
     fontWeight: '600',
     fontSize: 15,
   },
@@ -1172,10 +1228,8 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     paddingHorizontal: 18,
     borderRadius: 8,
-    backgroundColor: Colors.primary,
   },
   modalCreateText: {
-    color: Colors.surface,
     fontWeight: '600',
     fontSize: 15,
   },
@@ -1185,7 +1239,6 @@ const styles = StyleSheet.create({
   },
   joinModalDescription: {
     fontSize: 14,
-    color: Colors.textSecondary,
     lineHeight: 20,
     marginBottom: 20,
     textAlign: 'center',
@@ -1197,23 +1250,18 @@ const styles = StyleSheet.create({
     letterSpacing: 3,
     textTransform: 'uppercase',
     borderWidth: 2,
-    borderColor: Colors.primary,
-    backgroundColor: '#fff',
     paddingVertical: 16,
     marginBottom: 8,
   },
   joinModalExamples: {
     marginTop: 24,
     padding: 16,
-    backgroundColor: Colors.background,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: Colors.border,
   },
   examplesTitle: {
     fontSize: 14,
     fontWeight: '600',
-    color: Colors.text,
     marginBottom: 12,
     textAlign: 'center',
   },
@@ -1225,10 +1273,8 @@ const styles = StyleSheet.create({
   },
   exampleCode: {
     padding: 8,
-    backgroundColor: Colors.primary + '10',
     borderRadius: 16,
     borderWidth: 1,
-    borderColor: Colors.primary + '30',
     alignItems: 'center',
     minWidth: 70,
     paddingHorizontal: 12,
@@ -1236,18 +1282,16 @@ const styles = StyleSheet.create({
   exampleCodeText: {
     fontSize: 11,
     fontWeight: '700',
-    color: Colors.primary,
     marginBottom: 1,
   },
   exampleCodeSubject: {
     fontSize: 9,
-    color: Colors.textSecondary,
     textAlign: 'center',
   },
   modalButtonDisabled: {
-    backgroundColor: Colors.border,
+    opacity: 0.5,
   },
   modalButtonTextDisabled: {
-    color: Colors.textSecondary,
+    opacity: 0.5,
   },
 });

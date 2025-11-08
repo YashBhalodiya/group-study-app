@@ -4,6 +4,7 @@ import 'react-native-get-random-values';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import Toast from 'react-native-toast-message';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
+import { ThemeProvider } from './contexts/ThemeContext';
 import { AuthService } from './services/authService';
 
 function AuthLayout() {
@@ -57,8 +58,10 @@ export default function RootLayout() {
   return (
     <SafeAreaProvider>
       <AuthProvider>
-        <AuthLayout />
-        <Toast />
+        <ThemeProvider>
+          <AuthLayout />
+          <Toast />
+        </ThemeProvider>
       </AuthProvider>
     </SafeAreaProvider>
   );

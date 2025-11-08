@@ -1,17 +1,35 @@
 export const Colors = {
-  primary: '#007AFF',
-  secondary: '#5856D6',
-  background: '#F8F9FA',
+  primary: '#6366F1',
+  secondary: '#8B5CF6',
+  background: '#F8FAFC',
   surface: '#FFFFFF',
-  text: '#000000',
-  textSecondary: '#6C757D',
-  placeholder: '#9CA3AF',
-  border: '#E5E7EB',
-  success: '#28A745',
-  error: '#DC3545',
-  warning: '#FFC107',
+  text: '#1E293B',
+  textSecondary: '#64748B',
+  placeholder: '#94A3B8',
+  border: '#E2E8F0',
+  success: '#10B981',
+  error: '#EF4444',
+  warning: '#F59E0B',
   
   // Gradients
-  primaryGradient: ['#007AFF', '#5856D6'],
-  backgroundGradient: ['#F8F9FA', '#E9ECEF'],
+  primaryGradient: ['#6366F1', '#8B5CF6'],
+  secondaryGradient: ['#8B5CF6', '#D946EF'],
+  successGradient: ['#10B981', '#34D399'],
+  warningGradient: ['#F59E0B', '#FBBF24'],
+  errorGradient: ['#EF4444', '#F87171'],
+  backgroundGradient: ['#F8FAFC', '#F1F5F9'],
+  
+  // Semantic colors
+  info: '#0EA5E9',
+  infoLight: '#BAE6FD',
+  successLight: '#A7F3D0',
+  warningLight: '#FDE68A',
+  errorLight: '#FCA5A5',
+  
+  // Dark mode colors
+  darkBackground: '#0F172A',
+  darkSurface: '#1E293B',
+  darkBorder: '#334155',
+  darkText: '#F8FAFC',
+  darkTextSecondary: '#CBD5E1',
 };
