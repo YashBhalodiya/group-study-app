@@ -43,6 +43,7 @@ export class AuthService {
         avatarColor: UserService.generateAvatarColor(displayName),
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
+        joinedGroups: []
       };
 
       // Save user profile to Firestore
@@ -83,6 +84,7 @@ export class AuthService {
           avatarColor: UserService.generateAvatarColor(user.displayName || email),
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
+          joinedGroups: []
         };
         
         // Save to both Firestore and local storage

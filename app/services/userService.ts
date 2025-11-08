@@ -10,7 +10,8 @@ export interface UserProfile {
   avatarColor?: string;
   createdAt: string;
   updatedAt: string;
-  profilePic?: string; 
+  profilePic?: string;
+  joinedGroups?: string[];
 }
 
 export class UserService {

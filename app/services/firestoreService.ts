@@ -29,7 +29,7 @@ export class FirestoreService {
   static async createUser(user: Omit<FirestoreUser, 'createdAt' | 'updatedAt'>): Promise<void> {
     try {
       const userRef = doc(firestore, this.USERS_COLLECTION, user.uid);
-      
+
       // Filter out undefined values
       const filteredUser: any = {};
       Object.entries(user).forEach(([key, value]) => {
@@ -37,7 +37,10 @@ export class FirestoreService {
           filteredUser[key] = value;
         }
       });
-      
+
+      // Always initialize joinedGroups as empty array for new users
+      filteredUser.joinedGroups = [];
+
       const userData: FirestoreUser = {
         ...filteredUser,
         createdAt: serverTimestamp() as Timestamp,
