@@ -710,8 +710,8 @@ export default function GroupsDashboard() {
           style={styles.modalOverlay}
           behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         >
-          <View style={styles.modalContainer}>
-            <Text style={styles.modalTitle}>Create New Group</Text>
+          <View style={[styles.modalContainer, { backgroundColor: colors.surface, maxHeight: '85%' }]}>
+            <Text style={[styles.modalTitle, { color: colors.text, marginBottom: 12 }]}>Create New Group</Text>
             <ScrollView contentContainerStyle={{ paddingBottom: 16 }}>
               <Text style={styles.inputLabel}>Group Name *</Text>
               <TextInput
@@ -762,7 +762,7 @@ export default function GroupsDashboard() {
                     setNewGroup({ ...newGroup, code: newCode });
                   }}
                 >
-                  <Text style={styles.regenerateButtonText}>↻</Text>
+                  <Text style={[styles.regenerateButtonText, { color: colors.surface }]}>↻</Text>
                 </TouchableOpacity>
               </View>
               <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>Description</Text>
@@ -784,11 +784,23 @@ export default function GroupsDashboard() {
               />
             </ScrollView>
             <View style={styles.modalButtonRow}>
-              <Pressable style={styles.modalCancelButton} onPress={handleModalClose}>
-                <Text style={styles.modalCancelText}>Cancel</Text>
+              <Pressable
+                style={[
+                  styles.modalCancelButton,
+                  { backgroundColor: colors.background, borderColor: colors.border }
+                ]}
+                onPress={handleModalClose}
+              >
+                <Text style={[styles.modalCancelText, { color: colors.textSecondary }]}>Cancel</Text>
               </Pressable>
-              <Pressable style={styles.modalCreateButton} onPress={handleModalSubmit}>
-                <Text style={styles.modalCreateText}>Create</Text>
+              <Pressable
+                style={[
+                  styles.modalCreateButton,
+                  { backgroundColor: colors.primary }
+                ]}
+                onPress={handleModalSubmit}
+              >
+                <Text style={[styles.modalCreateText, { color: colors.surface }]}>Create</Text>
               </Pressable>
             </View>
           </View>
@@ -955,12 +967,39 @@ export default function GroupsDashboard() {
             showsVerticalScrollIndicator={false}
           />
           <View style={styles.createButtonContainer}>
-            <TouchableOpacity style={styles.createButton} onPress={handleCreateGroup}>
-              <Text style={styles.createButtonIcon}>+</Text>
-              <Text style={styles.createButtonText}>Create New Group</Text>
+            <TouchableOpacity
+              accessibilityRole="button"
+              accessibilityLabel="Create new group"
+              onPress={handleCreateGroup}
+              style={[
+                styles.createButton,
+                {
+                  backgroundColor: colors.background,
+                  borderColor: colors.primary,
+                  borderWidth: 1,
+                  shadowColor: colors.primary,
+                },
+              ]}
+            >
+              <View style={[styles.iconCircle, { backgroundColor: colors.primary + '12' }]}> 
+                <Text style={[styles.createButtonIcon, { color: colors.primary }]}>+</Text>
+              </View>
+              <Text style={[styles.createButtonText, { color: colors.primary }]}>Create New Group</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={styles.joinButton} onPress={handleJoinGroup}>
-              <Text style={styles.joinButtonText}>Join Group</Text>
+
+            <TouchableOpacity
+              accessibilityRole="button"
+              accessibilityLabel="Join an existing group"
+              onPress={handleJoinGroup}
+              style={[
+                styles.joinButton,
+                {
+                  backgroundColor: colors.primary,
+                  borderColor: colors.primary,
+                },
+              ]}
+            >
+              <Text style={[styles.joinButtonText, { color: colors.surface }]}>Join Group</Text>
             </TouchableOpacity>
           </View>
         </>
@@ -1111,18 +1150,18 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 14,
+    paddingVertical: 12,
     paddingHorizontal: Layout.spacing.md,
     borderRadius: 12,
   },
   createButtonIcon: {
-    fontSize: 18,
-    fontWeight: '600',
-    marginRight: Layout.spacing.xs,
+    fontSize: 16,
+    fontWeight: '700',
+    marginRight: 0,
   },
   createButtonText: {
-    fontSize: 14,
-    fontWeight: '600',
+    fontSize: 15,
+    fontWeight: '700',
   },
   joinButton: {
     flex: 1,
@@ -1131,11 +1170,25 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     paddingHorizontal: Layout.spacing.md,
     borderRadius: 12,
-    borderWidth: 2,
+    borderWidth: 0,
   },
   joinButtonText: {
-    fontSize: 14,
-    fontWeight: '600',
+    fontSize: 15,
+    fontWeight: '700',
+  },
+  iconCircle: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: Layout.spacing.sm,
+    // subtle shadow
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.06,
+    shadowRadius: 4,
+    elevation: 2,
   },
   modalOverlay: {
     flex: 1,
