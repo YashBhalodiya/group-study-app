@@ -1,4 +1,3 @@
-
 import { Feather } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
 import * as ImagePicker from 'expo-image-picker';
@@ -19,19 +18,152 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { EditProfileModal } from '../components/ui';
-import { Layout } from '../constants';
 import { useTheme } from '../contexts/ThemeContext';
 import { AuthService } from '../services/authService';
 import { UserProfile, UserService } from '../services/userService';
 
 export default function ProfileTab() {
   const { isDarkMode, toggleTheme, colors } = useTheme();
-  const styles = useThemedStyles(colors);
   const [notifications, setNotifications] = useState(false);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [editModalVisible, setEditModalVisible] = useState(false);
+
+  // Move styles INSIDE the component where colors is available
+  const styles = StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: colors.background,
+    },
+    loadingContainer: {
+      flex: 1,
+      justifyContent: 'center',
+      alignItems: 'center',
+      backgroundColor: colors.background,
+    },
+    loadingText: {
+      marginTop: 16,
+      fontSize: 16,
+      color: colors.text,
+    },
+    errorContainer: {
+      flex: 1,
+      justifyContent: 'center',
+      alignItems: 'center',
+      backgroundColor: colors.background,
+      paddingHorizontal: 32,
+    },
+    errorTitle: {
+      fontSize: 24,
+      fontWeight: 'bold',
+      color: colors.text,
+      marginTop: 16,
+      marginBottom: 8,
+    },
+    errorText: {
+      fontSize: 16,
+      color: colors.textSecondary,
+      textAlign: 'center',
+      marginBottom: 24,
+    },
+    retryButton: {
+      backgroundColor: colors.primary,
+      paddingHorizontal: 32,
+      paddingVertical: 12,
+      borderRadius: 8,
+    },
+    retryButtonText: {
+      color: '#fff',
+      fontSize: 16,
+      fontWeight: '600',
+    },
+    scrollView: {
+      flex: 1,
+    },
+    header: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      paddingHorizontal: 20,
+      paddingVertical: 16,
+      backgroundColor: colors.surface,
+    },
+    headerTitle: {
+      fontSize: 24,
+      fontWeight: 'bold',
+      color: colors.text,
+    },
+    editIcon: {
+      padding: 8,
+    },
+    avatarSection: {
+      alignItems: 'center',
+      paddingVertical: 32,
+      backgroundColor: colors.surface,
+    },
+    avatar: {
+      width: 120,
+      height: 120,
+      borderRadius: 60,
+      justifyContent: 'center',
+      alignItems: 'center',
+      marginBottom: 16,
+    },
+    avatarImage: {
+      width: 120,
+      height: 120,
+      borderRadius: 60,
+    },
+    name: {
+      fontSize: 24,
+      fontWeight: 'bold',
+      color: colors.text,
+      marginBottom: 4,
+    },
+    email: {
+      fontSize: 16,
+      color: colors.textSecondary,
+      marginBottom: 8,
+    },
+    bio: {
+      fontSize: 14,
+      color: colors.textSecondary,
+      textAlign: 'center',
+      paddingHorizontal: 32,
+    },
+    settingsSection: {
+      marginTop: 24,
+      paddingHorizontal: 20,
+    },
+    settingsTitle: {
+      fontSize: 18,
+      fontWeight: '600',
+      color: colors.text,
+      marginBottom: 16,
+    },
+    settingsItem: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      paddingVertical: 16,
+      paddingHorizontal: 16,
+      backgroundColor: colors.surface,
+      marginBottom: 8,
+      borderRadius: 8,
+    },
+    settingsLabel: {
+      fontSize: 16,
+      color: colors.text,
+    },
+    logoutItem: {
+      marginTop: 24,
+    },
+    logoutText: {
+      fontSize: 16,
+      color: '#FF6B6B',
+    },
+  });
 
   // Load user profile data
   const loadUserProfile = useCallback(async () => {
@@ -251,6 +383,3 @@ export default function ProfileTab() {
     </SafeAreaView>
   );
 }
-
-// Move to using themed styles
-import { useThemedStyles } from '../styles/themedStyles';

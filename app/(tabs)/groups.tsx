@@ -1,6 +1,5 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter } from 'expo-router';
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import {
   Alert,
   FlatList,
@@ -21,6 +20,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Button } from '../components/ui/Button';
 import { Layout } from '../constants';
 import { useTheme } from '../contexts/ThemeContext';
+import { AuthService } from '../services/authService';
+import { FirestoreGroupData, FirestoreGroupsService } from '../services/firestoreGroupsService';
 
 interface Group {
   id: string;
@@ -30,15 +31,11 @@ interface Group {
   isCreator: boolean;
   subject: string;
   code: string;
-  isJoined?: boolean; // Track if current user is a member
-  joinedAt?: Date; // When the user joined
-}
-
-interface UserMembership {
-  groupId: string;
-  groupCode: string;
-  joinedAt: Date;
-  role: 'creator' | 'member';
+  isJoined?: boolean;
+  joinedAt?: Date;
+  createdAt?: Date;
+  lastActivity?: Date;
+  userRole?: 'admin' | 'member';
 }
 
 export default function GroupsDashboard() {
@@ -50,318 +47,186 @@ export default function GroupsDashboard() {
   const [modalVisible, setModalVisible] = useState(false);
   const [joinModalVisible, setJoinModalVisible] = useState(false);
   const [joinCode, setJoinCode] = useState('');
-  const [userMemberships, setUserMemberships] = useState<UserMembership[]>([]);
   const [newGroup, setNewGroup] = useState({
     name: '',
     description: '',
     subject: '',
-    code: '',
   });
-
-  // Mock data - replace with actual API calls
-  const mockGroups: Group[] = [
-    {
-      id: '1',
-      name: 'Study Group for Calculus',
-      description: 'Advanced calculus concepts and problem solving',
-      memberCount: 5,
-      isCreator: false,
-      subject: 'Mathematics',
-      code: 'CALC2024',
-      isJoined: true,
-      joinedAt: new Date(Date.now() - 86400000 * 7), // Joined 7 days ago
-    },
-    {
-      id: '2',
-      name: 'Literature Discussion',
-      description: 'Modern literature analysis and discussion',
-      memberCount: 8,
-      isCreator: true,
-      subject: 'English Literature',
-      code: 'LIT2024',
-      isJoined: true,
-      joinedAt: new Date(Date.now() - 86400000 * 14), // Created 14 days ago
-    },
-    {
-      id: '3',
-      name: 'Physics Study Buddies',
-      description: 'Quantum physics and thermodynamics study group',
-      memberCount: 3,
-      isCreator: false,
-      subject: 'Physics',
-      code: 'PHY2024',
-      isJoined: true,
-      joinedAt: new Date(Date.now() - 86400000 * 3), // Joined 3 days ago
-    },
-  ];
-
-  // Mock initial memberships
-  const mockMemberships: UserMembership[] = [
-    {
-      groupId: '1',
-      groupCode: 'CALC2024',
-      joinedAt: new Date(Date.now() - 86400000 * 7),
-      role: 'member',
-    },
-    {
-      groupId: '2',
-      groupCode: 'LIT2024',
-      joinedAt: new Date(Date.now() - 86400000 * 14),
-      role: 'creator',
-    },
-    {
-      groupId: '3',
-      groupCode: 'PHY2024',
-      joinedAt: new Date(Date.now() - 86400000 * 3),
-      role: 'member',
-    },
-  ];
-
-  // Storage keys
-  const GROUPS_STORAGE_KEY = 'user_groups';
-  const MEMBERSHIPS_STORAGE_KEY = 'user_memberships';
-
-  // Storage functions
-  const saveGroupsToStorage = async (groupsData: Group[]) => {
-    try {
-      await AsyncStorage.setItem(GROUPS_STORAGE_KEY, JSON.stringify(groupsData));
-    } catch (error) {
-      console.error('Error saving groups to storage:', error);
-    }
-  };
-
-  const saveMembershipsToStorage = async (membershipsData: UserMembership[]) => {
-    try {
-      await AsyncStorage.setItem(MEMBERSHIPS_STORAGE_KEY, JSON.stringify(membershipsData));
-    } catch (error) {
-      console.error('Error saving memberships to storage:', error);
-    }
-  };
-
-  const loadGroupsFromStorage = async (): Promise<Group[]> => {
-    try {
-      const storedGroups = await AsyncStorage.getItem(GROUPS_STORAGE_KEY);
-      if (storedGroups) {
-        return JSON.parse(storedGroups);
-      }
-      return [];
-    } catch (error) {
-      console.error('Error loading groups from storage:', error);
-      return [];
-    }
-  };
-
-  const loadMembershipsFromStorage = async (): Promise<UserMembership[]> => {
-    try {
-      const storedMemberships = await AsyncStorage.getItem(MEMBERSHIPS_STORAGE_KEY);
-      if (storedMemberships) {
-        return JSON.parse(storedMemberships);
-      }
-      return [];
-    } catch (error) {
-      console.error('Error loading memberships from storage:', error);
-      return [];
-    }
-  };
-
-  // Function to add user to group members list
-  const addUserToGroupMembers = async (groupId: string, newMember: any) => {
-    try {
-      const storedGroups = await AsyncStorage.getItem(GROUPS_STORAGE_KEY);
-      if (storedGroups) {
-        const groups = JSON.parse(storedGroups);
-        const updatedGroups = groups.map((group: any) => {
-          if (group.id === groupId) {
-            // Initialize members array if it doesn't exist
-            if (!group.members) {
-              group.members = [
-                {
-                  id: 'creator_' + group.code,
-                  name: 'Group Creator',
-                  role: 'teacher',
-                  joinedAt: new Date(),
-                }
-              ];
-            }
-            
-            // Check if user is already a member
-            const existingMember = group.members.find((member: any) => 
-              member.name === newMember.name || member.id === newMember.id
-            );
-            
-            if (!existingMember) {
-              return {
-                ...group,
-                members: [...group.members, newMember],
-                memberCount: group.members.length + 1,
-              };
-            }
-          }
-          return group;
-        });
-        
-        await AsyncStorage.setItem(GROUPS_STORAGE_KEY, JSON.stringify(updatedGroups));
-      }
-    } catch (error) {
-      console.error('Error adding user to group members:', error);
-    }
-  };
+  const [unsubscribeGroups, setUnsubscribeGroups] = useState<(() => void) | null>(null);
 
   useEffect(() => {
-    loadGroups();
-  }, []);
+    // Check if user is authenticated
+    const currentUser = AuthService.getCurrentUser();
+    if (!currentUser) {
+      Alert.alert('Authentication Error', 'Please sign in to view groups');
+      return;
+    }
 
-  const loadGroups = async () => {
+    // Only set up subscription if we don't already have one
+    if (!unsubscribeGroups) {
+      loadGroups();
+    }
+
+    // Cleanup subscription on unmount
+    return () => {
+      if (unsubscribeGroups) {
+        unsubscribeGroups();
+        setUnsubscribeGroups(null);
+      }
+    };
+  }, []); // Empty dependency array - only run once
+
+  const loadGroups = useCallback(async () => {
+    // If we already have a subscription, clean it up first
+    if (unsubscribeGroups) {
+      unsubscribeGroups();
+      setUnsubscribeGroups(null);
+    }
+
     setLoading(true);
     try {
-      // Load saved groups and memberships from AsyncStorage
-      const savedGroups = await loadGroupsFromStorage();
-      const savedMemberships = await loadMembershipsFromStorage();
+      // Set up real-time subscription to user's groups
+      const unsubscribe = FirestoreGroupsService.subscribeToUserGroups(
+        (firestoreGroups: FirestoreGroupData[]) => {
+          console.log('Received groups update:', firestoreGroups.length, 'groups');
+          // Convert Firestore data to local Group interface
+          const convertedGroups: Group[] = firestoreGroups.map(group => {
+            const currentUserId = AuthService.getCurrentUser()?.uid;
+            
+            return {
+              id: group.id!,
+              name: group.name,
+              description: group.description,
+              memberCount: group.memberCount,
+              isCreator: group.createdBy === currentUserId,
+              subject: group.subject,
+              code: group.code,
+              isJoined: group.members.includes(currentUserId || ''),
+              joinedAt: group.createdAt ? FirestoreGroupsService.timestampToDate(group.createdAt) : new Date(),
+              createdAt: group.createdAt ? FirestoreGroupsService.timestampToDate(group.createdAt) : new Date(),
+              lastActivity: group.lastActivity ? FirestoreGroupsService.timestampToDate(group.lastActivity) : new Date(),
+              userRole: group.admins.includes(currentUserId || '') ? 'admin' : 'member'
+            };
+          });
+
+          console.log('Setting groups in state:', convertedGroups.length, 'groups');
+          setGroups(convertedGroups);
+          setLoading(false);
+        },
+        (error) => {
+          console.error('Error loading groups:', error);
+          setLoading(false);
+          showToast('Failed to load groups. Please try again.');
+        }
+      );
+
+      setUnsubscribeGroups(() => unsubscribe);
+    } catch (error: any) {
+      console.error('Error setting up groups subscription:', error);
       
-      // If no saved data, initialize with mock data for first-time users
-      if (savedGroups.length === 0) {
-        setGroups(mockGroups);
-        setUserMemberships(mockMemberships);
-        // Save mock data as initial data
-        await saveGroupsToStorage(mockGroups);
-        await saveMembershipsToStorage(mockMemberships);
-      } else {
-        // Use saved data
-        setGroups(savedGroups);
-        setUserMemberships(savedMemberships);
+      // Fallback: try to load groups once without subscription
+      try {
+        const fallbackGroups = await FirestoreGroupsService.getUserGroups();
+        const convertedGroups: Group[] = fallbackGroups.map(group => {
+          const currentUserId = AuthService.getCurrentUser()?.uid;
+          
+          return {
+            id: group.id!,
+            name: group.name,
+            description: group.description,
+            memberCount: group.memberCount,
+            isCreator: group.createdBy === currentUserId,
+            subject: group.subject,
+            code: group.code,
+            isJoined: group.members.includes(currentUserId || ''),
+            joinedAt: group.createdAt ? FirestoreGroupsService.timestampToDate(group.createdAt) : new Date(),
+            createdAt: group.createdAt ? FirestoreGroupsService.timestampToDate(group.createdAt) : new Date(),
+            lastActivity: group.lastActivity ? FirestoreGroupsService.timestampToDate(group.lastActivity) : new Date(),
+            userRole: group.admins.includes(currentUserId || '') ? 'admin' : 'member'
+          };
+        });
+        
+        console.log('Fallback: Setting groups from direct fetch:', convertedGroups.length, 'groups');
+        setGroups(convertedGroups);
+      } catch (fallbackError) {
+        console.error('Fallback also failed:', fallbackError);
+        showToast('Failed to load groups. Please try again.');
       }
       
       setLoading(false);
-    } catch (error) {
-      console.error('Error loading groups:', error);
-      setLoading(false);
-      showToast('Failed to load groups. Please try again.');
     }
-  };
+  }, []);
 
-  const onRefresh = async () => {
+  const onRefresh = useCallback(async () => {
     setRefreshing(true);
-    await loadGroups();
-    setRefreshing(false);
-  };
+    try {
+      // For refresh, just reload the groups subscription
+      await loadGroups();
+    } catch (error) {
+      console.error('Error refreshing groups:', error);
+      showToast('Failed to refresh groups.');
+    } finally {
+      setRefreshing(false);
+    }
+  }, [loadGroups]);
 
   const showToast = (message: string) => {
     Alert.alert('StudyHub', message);
   };
 
-  // Generate unique group code
-  const generateUniqueGroupCode = () => {
-    const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-    let result = '';
-    
-    // Generate a 6-character code
-    for (let i = 0; i < 6; i++) {
-      result += characters.charAt(Math.floor(Math.random() * characters.length));
-    }
-    
-    // Add timestamp to ensure uniqueness
-    const timestamp = Date.now().toString().slice(-3);
-    result = result.slice(0, 3) + timestamp;
-    
-    // Check if code already exists in current groups
-    const existingCodes = groups.map(group => group.code);
-    if (existingCodes.includes(result)) {
-      // If code exists, generate a new one recursively
-      return generateUniqueGroupCode();
-    }
-    
-    return result;
-  };
-
   const handleCreateGroup = () => {
-    // Auto-generate a unique code when creating a group
-    const uniqueCode = generateUniqueGroupCode();
-    setNewGroup(prev => ({ ...prev, code: uniqueCode }));
     setModalVisible(true);
   };
 
   const handleModalClose = () => {
     setModalVisible(false);
-    setNewGroup({ name: '', description: '', subject: '', code: '' });
+    setNewGroup({ name: '', description: '', subject: '' });
   };
 
   const handleModalSubmit = async () => {
-    if (!newGroup.name || !newGroup.subject) {
+    if (!newGroup.name.trim() || !newGroup.subject.trim()) {
       showToast('Please fill all required fields');
       return;
     }
     
-    // Use the auto-generated code or generate a new one if somehow missing
-    const groupCode = newGroup.code || generateUniqueGroupCode();
-    
-    // Add the new group to the list
-    const newGroupData: Group = {
-      id: Date.now().toString(), // Use timestamp for unique ID
-      name: newGroup.name,
-      description: newGroup.description,
-      memberCount: 1,
-      isCreator: true,
-      subject: newGroup.subject,
-      code: groupCode,
-      isJoined: true,
-      joinedAt: new Date(),
-    };
-
-    // Initialize group with creator as first member
-    const initialMembers = [
-      {
-        id: 'creator_' + groupCode,
-        name: 'You (Creator)',
-        role: 'teacher' as const,
-        joinedAt: new Date(),
-      }
-    ];
-
-    // Add members to the group data
-    const newGroupWithMembers = {
-      ...newGroupData,
-      members: initialMembers,
-    };
-    
-    // Add membership record for the creator
-    const newMembership: UserMembership = {
-      groupId: newGroupData.id,
-      groupCode: groupCode,
-      joinedAt: new Date(),
-      role: 'creator',
-    };
-    
-    // Update state
-    const updatedGroups = [newGroupWithMembers, ...groups];
-    const updatedMemberships = [newMembership, ...userMemberships];
-    
-    setGroups(updatedGroups);
-    setUserMemberships(updatedMemberships);
-    
-    // Save to AsyncStorage
-    await saveGroupsToStorage(updatedGroups);
-    await saveMembershipsToStorage(updatedMemberships);
-    
-    handleModalClose();
-    
-    // Show success message with the group code
-    Alert.alert(
-      'Group Created Successfully!',
-      `Your group "${newGroup.name}" has been created.\n\nGroup Code: ${groupCode}\n\nShare this code with others so they can join your group.`,
-      [
-        {
-          text: 'Copy Code',
-          onPress: () => {
-            // In a real app, you would copy to clipboard
-            showToast(`Group code ${groupCode} copied!`);
+    try {
+      setLoading(true);
+      
+      // Create group in Firestore
+      const { groupId, groupCode } = await FirestoreGroupsService.createGroup(
+        newGroup.name,
+        newGroup.description,
+        newGroup.subject,
+        false, // isPrivate
+        50 // maxMembers
+      );
+      
+      handleModalClose();
+      
+      // Show success message with the group code
+      Alert.alert(
+        'Group Created Successfully!',
+        `Your group "${newGroup.name}" has been created.\n\nGroup Code: ${groupCode}\n\nShare this code with others so they can join your group.`,
+        [
+          {
+            text: 'Copy Code',
+            onPress: () => {
+              // In a real app, you would copy to clipboard
+              showToast(`Group code ${groupCode} copied!`);
+            }
+          },
+          {
+            text: 'OK',
+            style: 'default'
           }
-        },
-        {
-          text: 'OK',
-          style: 'default'
-        }
-      ]
-    );
+        ]
+      );
+    } catch (error: any) {
+      console.error('Error creating group:', error);
+      showToast(error.message || 'Failed to create group. Please try again.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleJoinGroup = () => {
@@ -389,7 +254,7 @@ export default function GroupsDashboard() {
     setJoinCode('');
   };
 
-  const joinGroupByCode = (code: string) => {
+  const joinGroupByCode = async (code: string) => {
     // Validate code format (should be 6 characters)
     if (!code || code.length !== 6) {
       Alert.alert(
@@ -409,19 +274,23 @@ export default function GroupsDashboard() {
       return;
     }
 
-    // Check if user is already a member of this group
-    const existingMembership = userMemberships.find(membership => membership.groupCode === code);
-    if (existingMembership) {
-      const existingGroup = groups.find(group => group.code === code);
+    try {
+      setLoading(true);
+      
+      // Attempt to join group using Firestore service
+      const { groupId, groupName } = await FirestoreGroupsService.joinGroupByCode(code);
+      
       Alert.alert(
-        'Already a Member',
-        `You are already a member of "${existingGroup?.name || 'this group'}". You cannot join the same group twice.`,
+        'Successfully Joined!',
+        `Welcome to "${groupName}"!\n\nYou are now a member of this study group.`,
         [
           {
             text: 'View Group',
             onPress: () => {
-              if (existingGroup) {
-                handleGroupPress(existingGroup);
+              // Find the group in current list or navigate directly
+              const group = groups.find(g => g.id === groupId);
+              if (group) {
+                handleGroupPress(group);
               }
             }
           },
@@ -431,152 +300,46 @@ export default function GroupsDashboard() {
           }
         ]
       );
-      return;
-    }
-
-    // Find group by code in all available groups (including those not yet joined)
-    // In a real app, this would be an API call to search all public groups
-    const allAvailableGroups = [
-      ...groups,
-      // Add some example groups that user hasn't joined yet
-      {
-        id: 'temp_1',
-        name: 'Advanced Chemistry',
-        description: 'Organic chemistry study group',
-        memberCount: 12,
-        isCreator: false,
-        subject: 'Chemistry',
-        code: 'CHEM01',
-        isJoined: false,
-      },
-      {
-        id: 'temp_2',
-        name: 'Machine Learning Basics',
-        description: 'Introduction to ML concepts',
-        memberCount: 20,
-        isCreator: false,
-        subject: 'Computer Science',
-        code: 'ML2024',
-        isJoined: false,
-      },
-      {
-        id: 'temp_3',
-        name: 'Spanish Conversation',
-        description: 'Practice Spanish speaking skills',
-        memberCount: 8,
-        isCreator: false,
-        subject: 'Languages',
-        code: 'ESP101',
-        isJoined: false,
-      },
-    ];
-
-    const groupToJoin = allAvailableGroups.find(group => group.code === code);
-    
-    if (groupToJoin) {
-      // Check if the group is available for joining
-      if (groupToJoin.memberCount >= 50) { // Max capacity check
+    } catch (error: any) {
+      console.error('Error joining group:', error);
+      
+      if (error.message.includes('not found')) {
+        Alert.alert(
+          'Group Not Found',
+          `No group found with the code "${code}". Please check the code and try again.\n\nMake sure you have entered the correct 6-character code provided by the group creator.`,
+          [
+            {
+              text: 'Try Again',
+              onPress: () => handleJoinGroup()
+            },
+            {
+              text: 'Cancel',
+              style: 'cancel'
+            }
+          ]
+        );
+      } else if (error.message.includes('already a member')) {
+        Alert.alert(
+          'Already a Member',
+          `You are already a member of this group. You cannot join the same group twice.`,
+          [
+            {
+              text: 'OK',
+              style: 'default'
+            }
+          ]
+        );
+      } else if (error.message.includes('maximum capacity')) {
         Alert.alert(
           'Group Full',
-          'This group has reached its maximum capacity of 50 members. Please try joining a different group.',
+          'This group has reached its maximum capacity. Please try joining a different group.',
           [{ text: 'OK' }]
         );
-        return;
+      } else {
+        showToast(error.message || 'Failed to join group. Please try again.');
       }
-
-      // Confirm join action
-      Alert.alert(
-        'Join Group',
-        `Do you want to join "${groupToJoin.name}"?\n\nSubject: ${groupToJoin.subject}\nCurrent Members: ${groupToJoin.memberCount}\nDescription: ${groupToJoin.description || 'No description available'}`,
-        [
-          {
-            text: 'Cancel',
-            style: 'cancel'
-          },
-          {
-            text: 'Join Group',
-            onPress: async () => {
-              // Add user to the group
-              const updatedGroup: Group = {
-                ...groupToJoin,
-                memberCount: groupToJoin.memberCount + 1,
-                isCreator: false,
-                isJoined: true,
-                joinedAt: new Date(),
-                id: groupToJoin.id.startsWith('temp_') ? (groups.length + 1).toString() : groupToJoin.id,
-              };
-
-              // Create membership record
-              const newMembership: UserMembership = {
-                groupId: updatedGroup.id,
-                groupCode: code,
-                joinedAt: new Date(),
-                role: 'member',
-              };
-
-              // Update groups list
-              let updatedGroups: Group[];
-              if (groupToJoin.id.startsWith('temp_')) {
-                // This was a new group, add it to the list
-                updatedGroups = [updatedGroup, ...groups];
-                setGroups(updatedGroups);
-              } else {
-                // Update existing group
-                updatedGroups = groups.map(group => 
-                  group.code === code ? updatedGroup : group
-                );
-                setGroups(updatedGroups);
-              }
-
-              // Add membership
-              const updatedMemberships = [newMembership, ...userMemberships];
-              setUserMemberships(updatedMemberships);
-              
-              // Add current user to the group's members list
-              await addUserToGroupMembers(updatedGroup.id, {
-                id: 'current_user_' + Date.now(),
-                name: 'You',
-                role: 'student' as const,
-                joinedAt: new Date(),
-              });
-              
-              // Save to AsyncStorage
-              saveGroupsToStorage(updatedGroups);
-              saveMembershipsToStorage(updatedMemberships);
-              
-              Alert.alert(
-                'Successfully Joined!',
-                `Welcome to "${updatedGroup.name}"!\n\nYou are now member #${updatedGroup.memberCount} of this study group.`,
-                [
-                  {
-                    text: 'View Group',
-                    onPress: () => handleGroupPress(updatedGroup)
-                  },
-                  {
-                    text: 'OK',
-                    style: 'default'
-                  }
-                ]
-              );
-            }
-          }
-        ]
-      );
-    } else {
-      Alert.alert(
-        'Group Not Found',
-        `No group found with the code "${code}". Please check the code and try again.\n\nMake sure you have entered the correct 6-character code provided by the group creator.`,
-        [
-          {
-            text: 'Try Again',
-            onPress: () => handleJoinGroup()
-          },
-          {
-            text: 'Cancel',
-            style: 'cancel'
-          }
-        ]
-      );
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -591,9 +354,25 @@ export default function GroupsDashboard() {
     });
   };
 
-  const getLastActivityText = (memberCount: number) => {
-    const timeAgo = Math.floor(Math.random() * 10) + 1; // Random time for demo
-    return `Last activity ${timeAgo}d ago`;
+  const getLastActivityText = (group: Group) => {
+    if (!group.lastActivity) return 'No recent activity';
+    
+    const now = new Date();
+    const lastActivity = group.lastActivity;
+    const diffMs = now.getTime() - lastActivity.getTime();
+    const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+    const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+    const diffMinutes = Math.floor(diffMs / (1000 * 60));
+    
+    if (diffDays > 0) {
+      return `Last activity ${diffDays}d ago`;
+    } else if (diffHours > 0) {
+      return `Last activity ${diffHours}h ago`;
+    } else if (diffMinutes > 0) {
+      return `Last activity ${diffMinutes}m ago`;
+    } else {
+      return 'Active now';
+    }
   };
 
   const getSubjectIcon = (subject: string) => {
@@ -631,12 +410,12 @@ export default function GroupsDashboard() {
             <Text style={[styles.groupName, { color: colors.text }]}>{item.name}</Text>
             {item.isCreator && (
               <View style={[styles.creatorBadge, { backgroundColor: colors.primary }]}>
-                <Text style={styles.creatorText}>Creator</Text>
+                <Text style={styles.creatorText}>Admin</Text>
               </View>
             )}
           </View>
           <Text style={[styles.groupActivity, { color: colors.textSecondary }]}>
-            {item.memberCount} members • {getLastActivityText(item.memberCount)}
+            {item.memberCount} members • {getLastActivityText(item)}
           </Text>
           {item.isCreator && (
             <View style={[styles.codeRow, { borderTopColor: colors.border }]}>
@@ -737,34 +516,6 @@ export default function GroupsDashboard() {
                 value={newGroup.subject}
                 onChangeText={text => setNewGroup({ ...newGroup, subject: text })}
               />
-              <Text style={styles.inputLabel}>Group Code (Auto-generated)</Text>
-              <View style={styles.codeContainer}>
-                <TextInput
-                  style={[
-                    styles.input, 
-                    styles.codeInput, 
-                    { 
-                      backgroundColor: colors.background,
-                      borderColor: colors.border,
-                      color: colors.text
-                    }
-                  ]}
-                  placeholder="Code will be generated automatically"
-                  placeholderTextColor={colors.textSecondary}
-                  value={newGroup.code}
-                  editable={false}
-                  selectTextOnFocus={true}
-                />
-                <TouchableOpacity 
-                  style={[styles.regenerateButton, { backgroundColor: colors.primary }]}
-                  onPress={() => {
-                    const newCode = generateUniqueGroupCode();
-                    setNewGroup({ ...newGroup, code: newCode });
-                  }}
-                >
-                  <Text style={[styles.regenerateButtonText, { color: colors.surface }]}>↻</Text>
-                </TouchableOpacity>
-              </View>
               <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>Description</Text>
               <TextInput
                 style={[
@@ -864,48 +615,10 @@ export default function GroupsDashboard() {
                     borderColor: colors.border
                   }
                 ]}>
-                  <Text style={[styles.examplesTitle, { color: colors.text }]}>Try these example codes:</Text>
-                  <View style={styles.exampleCodesContainer}>
-                    <TouchableOpacity 
-                      style={[
-                        styles.exampleCode,
-                        {
-                          backgroundColor: colors.primary + '10',
-                          borderColor: colors.primary + '30'
-                        }
-                      ]}
-                      onPress={() => setJoinCode('CHEM01')}
-                    >
-                      <Text style={[styles.exampleCodeText, { color: colors.primary }]}>CHEM01</Text>
-                      <Text style={[styles.exampleCodeSubject, { color: colors.textSecondary }]}>Chemistry</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity 
-                      style={[
-                        styles.exampleCode,
-                        {
-                          backgroundColor: colors.primary + '10',
-                          borderColor: colors.primary + '30'
-                        }
-                      ]}
-                      onPress={() => setJoinCode('ML2024')}
-                    >
-                      <Text style={[styles.exampleCodeText, { color: colors.primary }]}>ML2024</Text>
-                      <Text style={[styles.exampleCodeSubject, { color: colors.textSecondary }]}>ML</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity 
-                      style={[
-                        styles.exampleCode,
-                        {
-                          backgroundColor: colors.primary + '10',
-                          borderColor: colors.primary + '30'
-                        }
-                      ]}
-                      onPress={() => setJoinCode('ESP101')}
-                    >
-                      <Text style={[styles.exampleCodeText, { color: colors.primary }]}>ESP101</Text>
-                      <Text style={[styles.exampleCodeSubject, { color: colors.textSecondary }]}>Spanish</Text>
-                    </TouchableOpacity>
-                  </View>
+                  <Text style={[styles.examplesTitle, { color: colors.text }]}>How to get a group code:</Text>
+                  <Text style={[styles.exampleDescription, { color: colors.textSecondary }]}>
+                    Ask a group admin or creator to share their 6-character group code with you
+                  </Text>
                 </View>
               </View>
 
@@ -1237,29 +950,6 @@ const styles = StyleSheet.create({
     fontSize: 15,
     marginBottom: 2,
   },
-  codeContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 2,
-  },
-  codeInput: {
-    flex: 1,
-    marginBottom: 0,
-    marginRight: 8,
-  },
-  regenerateButton: {
-    borderRadius: 6,
-    paddingVertical: 10,
-    paddingHorizontal: 12,
-    justifyContent: 'center',
-    alignItems: 'center',
-    minWidth: 40,
-  },
-  regenerateButtonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
   modalButtonRow: {
     flexDirection: 'row',
     justifyContent: 'flex-end',
@@ -1315,36 +1005,12 @@ const styles = StyleSheet.create({
   examplesTitle: {
     fontSize: 14,
     fontWeight: '600',
+    marginBottom: 8,
+    textAlign: 'center',
+  },
+  exampleDescription: {
+    fontSize: 12,
     marginBottom: 12,
     textAlign: 'center',
-  },
-  exampleCodesContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    flexWrap: 'wrap',
-    gap: 10,
-  },
-  exampleCode: {
-    padding: 8,
-    borderRadius: 16,
-    borderWidth: 1,
-    alignItems: 'center',
-    minWidth: 70,
-    paddingHorizontal: 12,
-  },
-  exampleCodeText: {
-    fontSize: 11,
-    fontWeight: '700',
-    marginBottom: 1,
-  },
-  exampleCodeSubject: {
-    fontSize: 9,
-    textAlign: 'center',
-  },
-  modalButtonDisabled: {
-    opacity: 0.5,
-  },
-  modalButtonTextDisabled: {
-    opacity: 0.5,
   },
 });
