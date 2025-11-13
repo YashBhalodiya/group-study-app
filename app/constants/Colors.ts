@@ -11,6 +11,26 @@ export const Colors = {
   error: '#EF4444',
   warning: '#F59E0B',
   
+  // Light theme colors
+  light: {
+    background: '#F8FAFC',
+    surface: '#FFFFFF',
+    text: '#1E293B',
+    textSecondary: '#64748B',
+    placeholder: '#94A3B8',
+    border: '#E2E8F0',
+  },
+  
+  // Dark theme colors
+  dark: {
+    background: '#0F172A',
+    surface: '#1E293B',
+    text: '#F8FAFC',
+    textSecondary: '#CBD5E1',
+    placeholder: '#64748B',
+    border: '#334155',
+  },
+  
   // Gradients
   primaryGradient: ['#6366F1', '#8B5CF6'],
   secondaryGradient: ['#8B5CF6', '#D946EF'],
@@ -26,7 +46,7 @@ export const Colors = {
   warningLight: '#FDE68A',
   errorLight: '#FCA5A5',
   
-  // Dark mode colors
+  // Dark mode colors (legacy)
   darkBackground: '#0F172A',
   darkSurface: '#1E293B',
   darkBorder: '#334155',

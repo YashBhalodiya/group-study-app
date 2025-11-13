@@ -1,4 +1,4 @@
-import { Feather, Ionicons } from '@expo/vector-icons';
+import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
@@ -118,16 +118,22 @@ export default function ChatScreen({}: ChatScreenProps) {
         >
           <Ionicons name="arrow-back" size={24} color={colors.text} />
         </TouchableOpacity>
-        <View style={styles.headerInfo}>
+        <TouchableOpacity
+          style={styles.headerInfo}
+          onPress={() => router.push(`/group/info/${groupId}`)}
+        >
           <Text style={[styles.headerTitle, { color: colors.text }]}>
             {groupData?.name || 'Group Chat'}
           </Text>
           <Text style={[styles.headerSubtitle, { color: colors.textSecondary }]}>
             {groupData?.memberCount || 0} members
           </Text>
-        </View>
-        <TouchableOpacity style={styles.menuButton}>
-          <Feather name="more-vertical" size={20} color={colors.text} />
+        </TouchableOpacity>
+        <TouchableOpacity 
+          style={styles.menuButton}
+          onPress={() => router.push(`/group/info/${groupId}`)}
+        >
+          <Ionicons name="information-circle-outline" size={24} color={colors.primary} />
         </TouchableOpacity>
       </View>
 
