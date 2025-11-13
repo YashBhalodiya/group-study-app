@@ -5,7 +5,6 @@ import React, { useCallback, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
-  Image,
   RefreshControl,
   ScrollView,
   StatusBar,
@@ -16,8 +15,8 @@ import {
   View
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { EditProfileModal } from '../components/ui';
 import { ProfilePictureSection } from '../components/profile/ProfilePictureSection';
+import { EditProfileModal } from '../components/ui';
 import { useTheme } from '../contexts/ThemeContext';
 import { useProfilePicture } from '../hooks/useProfilePicture';
 import { AuthService } from '../services/authService';
@@ -91,6 +90,9 @@ export default function ProfileTab() {
     },
     scrollView: {
       flex: 1,
+    },
+    scrollContent: {
+      paddingBottom: 20,
     },
     header: {
       flexDirection: 'row',
@@ -167,12 +169,30 @@ export default function ProfileTab() {
       fontSize: 16,
       color: colors.text,
     },
+    logoutSection: {
+      paddingHorizontal: 20,
+      paddingTop: 24,
+      paddingBottom: 40,
+    },
+    logoutButton: {
+      flexDirection: 'row',
+      justifyContent: 'center',
+      alignItems: 'center',
+      paddingVertical: 16,
+      paddingHorizontal: 16,
+      backgroundColor: colors.surface,
+      borderRadius: 8,
+      borderWidth: 1,
+      borderColor: '#FF6B6B20',
+    },
     logoutItem: {
       marginTop: 24,
     },
     logoutText: {
       fontSize: 16,
       color: '#FF6B6B',
+      marginLeft: 8,
+      fontWeight: '600',
     },
   });
 
@@ -259,13 +279,28 @@ export default function ProfileTab() {
 
   // Handle logout
   const handleLogout = useCallback(async () => {
-    try {
-      await AuthService.signOut();
-      // router.dismissAll();
-      router.replace('/components/auth/Login');
-    } catch (error: any) {
-      Alert.alert('Logout failed', error.message || 'Please try again.');
-    }
+    Alert.alert(
+      'Logout',
+      'Are you sure you want to logout?',
+      [
+        {
+          text: 'Cancel',
+          style: 'cancel',
+        },
+        {
+          text: 'Logout',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await AuthService.signOut();
+              router.replace('/');
+            } catch (error: any) {
+              Alert.alert('Logout failed', error.message || 'Please try again.');
+            }
+          },
+        },
+      ]
+    );
   }, []);
 
   // Show loading state
@@ -303,6 +338,7 @@ export default function ProfileTab() {
       <StatusBar barStyle={isDarkMode ? "light-content" : "dark-content"} backgroundColor={colors.surface} />
       <ScrollView
         style={styles.scrollView}
+        contentContainerStyle={styles.scrollContent}
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
         }
@@ -370,12 +406,16 @@ export default function ProfileTab() {
               ios_backgroundColor={colors.border}
             />
           </View>
+        </View>
+
+        {/* Logout Section - Separate for better visibility */}
+        <View style={styles.logoutSection}>
           <TouchableOpacity 
-            style={[styles.settingsItem, styles.logoutItem]}
+            style={styles.logoutButton}
             onPress={handleLogout}
           >
-            <Text style={styles.logoutText}>Logout</Text>
             <Feather name="log-out" size={20} color="#FF6B6B" />
+            <Text style={styles.logoutText}>Logout</Text>
           </TouchableOpacity>
         </View>
       </ScrollView>

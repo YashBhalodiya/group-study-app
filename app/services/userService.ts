@@ -174,6 +174,17 @@ export class UserService {
     });
   }
 
+  // Get user profile by ID from Firestore
+  static async getUserProfileById(userId: string): Promise<UserProfile | null> {
+    try {
+      const firestoreProfile = await FirestoreService.getUser(userId);
+      return firestoreProfile;
+    } catch (error) {
+      console.error('Error getting user profile by ID:', error);
+      return null;
+    }
+  }
+
   // Generate avatar color based on user name
   static generateAvatarColor(name: string): string {
     const colors = [
