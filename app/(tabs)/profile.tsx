@@ -1,6 +1,5 @@
 import { Feather } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
-import * as ImagePicker from 'expo-image-picker';
 import { router } from 'expo-router';
 import React, { useCallback, useState } from 'react';
 import {
@@ -18,7 +17,9 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { EditProfileModal } from '../components/ui';
+import { ProfilePictureSection } from '../components/profile/ProfilePictureSection';
 import { useTheme } from '../contexts/ThemeContext';
+import { useProfilePicture } from '../hooks/useProfilePicture';
 import { AuthService } from '../services/authService';
 import { UserProfile, UserService } from '../services/userService';
 
@@ -29,6 +30,16 @@ export default function ProfileTab() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [editModalVisible, setEditModalVisible] = useState(false);
+  
+  // Use the profile picture hook with initial value
+  const { 
+    profilePic, 
+    loading: picLoading, 
+    error: picError, 
+    changeProfilePic, 
+    clearError,
+    setProfilePic 
+  } = useProfilePicture(userProfile?.profilePic || null);
 
   // Move styles INSIDE the component where colors is available
   const styles = StyleSheet.create({
@@ -179,7 +190,7 @@ export default function ProfileTab() {
     }
   }, []);
 
-  // Subscribe to real-time profile updates
+  // Subscribe to real-time profile updates and sync profile pic
   useFocusEffect(
     useCallback(() => {
       let unsubscribe: (() => void) | null = null;
@@ -192,6 +203,10 @@ export default function ProfileTab() {
         unsubscribe = UserService.subscribeToProfileUpdates((profile) => {
           if (profile) {
             setUserProfile(profile);
+            // Sync profile pic state with fetched data
+            if (profile.profilePic) {
+              setProfilePic(profile.profilePic);
+            }
             setLoading(false);
           }
         });
@@ -204,7 +219,7 @@ export default function ProfileTab() {
           unsubscribe();
         }
       };
-    }, [loadUserProfile])
+    }, [loadUserProfile, setProfilePic])
   );
 
   // Refresh profile data
@@ -228,26 +243,17 @@ export default function ProfileTab() {
 
   const handleChangeProfilePicture = async () => {
     try {
-      // Pick image from library
-      let result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.Images,
-        allowsEditing: true,
-        aspect: [1, 1],
-        quality: 1,
-      });
-
-      if (result.canceled) return;
-
-      const uri = result.assets[0].uri;
-      
-      // For now, just store the local URI (no cloud storage)
-      // In a real app, you might want to implement local file storage or use a different service
-      await handleProfileUpdate({ profilePic: uri });
-
-      Alert.alert('Success', 'Profile picture updated locally!');
+      await changeProfilePic();
+      // If successful, update the user profile in state
+      if (userProfile) {
+        const updatedProfile: UserProfile = {
+          ...userProfile,
+          profilePic: profilePic || userProfile.profilePic,
+        };
+        setUserProfile(updatedProfile);
+      }
     } catch (error) {
-      console.error('Error updating profile picture:', error);
-      Alert.alert('Error', 'Failed to update profile picture');
+      console.error('Error changing profile picture:', error);
     }
   };
 
@@ -313,15 +319,20 @@ export default function ProfileTab() {
           </TouchableOpacity>
         </View>
 
-        {/* Avatar and Info */}
+        {/* Avatar and Info with Profile Picture Section */}
         <View style={styles.avatarSection}>
-          <View style={[styles.avatar, { backgroundColor: userProfile.avatarColor || UserService.generateAvatarColor(userProfile.name), overflow: 'hidden' }]}> 
-            {userProfile.profilePic ? (
-              <Image source={{ uri: userProfile.profilePic }} style={styles.avatarImage} resizeMode="cover" />
-            ) : (
-              <Feather name="user" size={56} color={colors.text} />
-            )}
-          </View>
+          <ProfilePictureSection
+            profilePic={profilePic || userProfile.profilePic || null}
+            loading={picLoading}
+            error={picError}
+            onChangePress={handleChangeProfilePicture}
+            onErrorDismiss={clearError}
+            userName={userProfile.name}
+            primaryColor={colors.primary}
+            surfaceColor={colors.surface}
+            textColor={colors.text}
+            size="large"
+          />
           <Text style={styles.name}>{userProfile.name}</Text>
           <Text style={styles.email}>{userProfile.email}</Text>
           {userProfile.bio && (
@@ -337,10 +348,6 @@ export default function ProfileTab() {
             onPress={() => setEditModalVisible(true)}
           >
             <Text style={styles.settingsLabel}>Edit Profile</Text>
-            <Feather name="chevron-right" size={20} color={colors.textSecondary} />
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.settingsItem} onPress={handleChangeProfilePicture}>
-            <Text style={styles.settingsLabel}>Change Profile Picture</Text>
             <Feather name="chevron-right" size={20} color={colors.textSecondary} />
           </TouchableOpacity>
           <View style={styles.settingsItem}>
