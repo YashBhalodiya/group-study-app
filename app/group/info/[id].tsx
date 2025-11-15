@@ -138,6 +138,41 @@ export default function GroupInfoScreen() {
     );
   };
 
+  const handleRemoveMember = (member: GroupMember) => {
+    if (!group || !groupId || typeof groupId !== 'string' || !currentUser) return;
+
+    // Prevent removing yourself
+    if (member.id === currentUser.uid) {
+      Alert.alert('Error', 'You cannot remove yourself. Use "Leave Group" instead.');
+      return;
+    }
+
+    Alert.alert(
+      'Remove Member',
+      `Are you sure you want to remove ${member.name} from this group? They will no longer have access to the group.`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Remove',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              setLoading(true);
+              await FirestoreGroupsService.removeMember(groupId, member.id);
+              // Reload group info to refresh member list
+              await loadGroupInfo();
+              Alert.alert('Success', `${member.name} has been removed from the group.`);
+            } catch (error: any) {
+              Alert.alert('Error', error.message || 'Failed to remove member');
+            } finally {
+              setLoading(false);
+            }
+          },
+        },
+      ]
+    );
+  };
+
   const handleDeleteGroup = () => {
     if (!group || !groupId || typeof groupId !== 'string') return;
 
@@ -455,68 +490,95 @@ export default function GroupInfoScreen() {
             </Text>
           </View>
 
-          {members.map((member, index) => (
-            <View
-              key={member.id}
-              style={{
-                flexDirection: 'row',
-                alignItems: 'center',
-                padding: 16,
-                borderBottomWidth: index < members.length - 1 ? 1 : 0,
-                borderBottomColor: theme === 'dark' ? Colors.dark.border : Colors.light.border,
-              }}
-            >
-              <View style={{
-                width: 40,
-                height: 40,
-                borderRadius: 20,
-                backgroundColor: Colors.primary,
-                justifyContent: 'center',
-                alignItems: 'center',
-                marginRight: 12,
-              }}>
-                <Text style={{
-                  fontSize: 16,
-                  fontWeight: '600',
-                  color: 'white',
+          {members.map((member, index) => {
+            const canRemoveMember = currentUserRole === 'admin' && member.id !== currentUser?.uid;
+            
+            return (
+              <View
+                key={member.id}
+                style={{
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  padding: 16,
+                  borderBottomWidth: index < members.length - 1 ? 1 : 0,
+                  borderBottomColor: theme === 'dark' ? Colors.dark.border : Colors.light.border,
+                }}
+              >
+                <View style={{
+                  width: 40,
+                  height: 40,
+                  borderRadius: 20,
+                  backgroundColor: Colors.primary,
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                  marginRight: 12,
                 }}>
-                  {member.name.charAt(0).toUpperCase()}
-                </Text>
-              </View>
+                  <Text style={{
+                    fontSize: 16,
+                    fontWeight: '600',
+                    color: 'white',
+                  }}>
+                    {member.name.charAt(0).toUpperCase()}
+                  </Text>
+                </View>
 
-              <View style={{ flex: 1 }}>
-                <Text style={{
-                  fontSize: 16,
-                  fontWeight: '500',
-                  color: theme === 'dark' ? Colors.dark.text : Colors.light.text,
-                }}>
-                  {member.name}
-                </Text>
-                <Text style={{
-                  fontSize: 14,
-                  color: theme === 'dark' ? Colors.dark.textSecondary : Colors.light.textSecondary,
-                }}>
-                  Joined {formatDate(member.joinedAt)}
-                </Text>
-              </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={{
+                    fontSize: 16,
+                    fontWeight: '500',
+                    color: theme === 'dark' ? Colors.dark.text : Colors.light.text,
+                  }}>
+                    {member.name}
+                  </Text>
+                  <Text style={{
+                    fontSize: 14,
+                    color: theme === 'dark' ? Colors.dark.textSecondary : Colors.light.textSecondary,
+                  }}>
+                    Joined {formatDate(member.joinedAt)}
+                  </Text>
+                </View>
 
-              <View style={{
-                paddingHorizontal: 8,
-                paddingVertical: 4,
-                backgroundColor: member.role === 'admin' ? Colors.primary : Colors.secondary,
-                borderRadius: 12,
-              }}>
-                <Text style={{
-                  fontSize: 12,
-                  fontWeight: '600',
-                  color: 'white',
-                  textTransform: 'uppercase',
+                <View style={{
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  gap: 8,
                 }}>
-                  {member.role}
-                </Text>
+                  <View style={{
+                    paddingHorizontal: 8,
+                    paddingVertical: 4,
+                    backgroundColor: member.role === 'admin' ? Colors.primary : Colors.secondary,
+                    borderRadius: 12,
+                  }}>
+                    <Text style={{
+                      fontSize: 12,
+                      fontWeight: '600',
+                      color: 'white',
+                      textTransform: 'uppercase',
+                    }}>
+                      {member.role}
+                    </Text>
+                  </View>
+
+                  {canRemoveMember && (
+                    <TouchableOpacity
+                      onPress={() => handleRemoveMember(member)}
+                      style={{
+                        padding: 8,
+                        borderRadius: 8,
+                        backgroundColor: Colors.error + '20',
+                      }}
+                    >
+                      <Ionicons
+                        name="close-circle-outline"
+                        size={20}
+                        color={Colors.error}
+                      />
+                    </TouchableOpacity>
+                  )}
+                </View>
               </View>
-            </View>
-          ))}
+            );
+          })}
         </View>
 
         {/* Action Buttons */}

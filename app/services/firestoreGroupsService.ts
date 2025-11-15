@@ -415,6 +415,82 @@ export class FirestoreGroupsService {
   }
 
   /**
+   * Remove a member from the group (only for admins)
+   */
+  static async removeMember(groupId: string, memberIdToRemove: string): Promise<void> {
+    const currentUser = auth.currentUser;
+    if (!currentUser) {
+      throw new Error('No authenticated user');
+    }
+
+    try {
+      // Get group data first
+      const groupDoc = await getDoc(doc(firestore, this.GROUPS_COLLECTION, groupId));
+      if (!groupDoc.exists()) {
+        throw new Error('Group not found');
+      }
+
+      const groupData = groupDoc.data() as FirestoreGroupData;
+
+      // Check if current user is an admin
+      if (!groupData.admins.includes(currentUser.uid)) {
+        throw new Error('Only admins can remove members from the group');
+      }
+
+      // Check if member to remove exists in the group
+      if (!groupData.members.includes(memberIdToRemove)) {
+        throw new Error('User is not a member of this group');
+      }
+
+      // Prevent removing yourself
+      if (memberIdToRemove === currentUser.uid) {
+        throw new Error('You cannot remove yourself. Use "Leave Group" instead.');
+      }
+
+      // Check if trying to remove the last admin
+      const isMemberAdmin = groupData.admins.includes(memberIdToRemove);
+      if (isMemberAdmin && groupData.admins.length === 1) {
+        throw new Error('Cannot remove the last admin of the group');
+      }
+
+      // Use transaction to ensure data consistency
+      await runTransaction(firestore, async (transaction) => {
+        // Remove member from group
+        const groupRef = doc(firestore, this.GROUPS_COLLECTION, groupId);
+        const updates: any = {
+          members: arrayRemove(memberIdToRemove),
+          memberCount: Math.max(0, groupData.memberCount - 1),
+          lastActivity: serverTimestamp(),
+          updatedAt: serverTimestamp()
+        };
+
+        // Remove from admins if they are an admin
+        if (isMemberAdmin) {
+          updates.admins = arrayRemove(memberIdToRemove);
+        }
+
+        transaction.update(groupRef, updates);
+
+        // Remove group from removed user's joinedGroups
+        const removedUserRef = doc(firestore, this.USERS_COLLECTION, memberIdToRemove);
+        transaction.update(removedUserRef, {
+          joinedGroups: arrayRemove(groupId),
+          updatedAt: serverTimestamp()
+        });
+
+        // Delete group member record
+        const memberRef = doc(firestore, this.GROUPS_COLLECTION, groupId, this.GROUP_MEMBERS_COLLECTION, memberIdToRemove);
+        transaction.delete(memberRef);
+      });
+
+      console.log('Successfully removed member from group:', { groupId, memberIdToRemove });
+    } catch (error: any) {
+      console.error('Error removing member from group:', error);
+      throw new Error(`Failed to remove member: ${error.message}`);
+    }
+  }
+
+  /**
    * Delete a group (only for admins)
    */
   static async deleteGroup(groupId: string): Promise<void> {
