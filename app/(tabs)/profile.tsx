@@ -35,7 +35,6 @@ export default function ProfileTab() {
     profilePic, 
     loading: picLoading, 
     error: picError, 
-    changeProfilePic, 
     clearError,
     setProfilePic 
   } = useProfilePicture(userProfile?.profilePic || null);
@@ -261,21 +260,6 @@ export default function ProfileTab() {
     }
   }, []);
 
-  const handleChangeProfilePicture = async () => {
-    try {
-      await changeProfilePic();
-      // If successful, update the user profile in state
-      if (userProfile) {
-        const updatedProfile: UserProfile = {
-          ...userProfile,
-          profilePic: profilePic || userProfile.profilePic,
-        };
-        setUserProfile(updatedProfile);
-      }
-    } catch (error) {
-      console.error('Error changing profile picture:', error);
-    }
-  };
 
   // Handle logout
   const handleLogout = useCallback(async () => {
@@ -361,7 +345,6 @@ export default function ProfileTab() {
             profilePic={profilePic || userProfile.profilePic || null}
             loading={picLoading}
             error={picError}
-            onChangePress={handleChangeProfilePicture}
             onErrorDismiss={clearError}
             userName={userProfile.name}
             primaryColor={colors.primary}

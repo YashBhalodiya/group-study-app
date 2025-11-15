@@ -2,7 +2,6 @@ import React from 'react';
 import {
   View,
   Image,
-  TouchableOpacity,
   Text,
   StyleSheet,
   ActivityIndicator,
@@ -13,7 +12,7 @@ interface ProfilePictureSectionProps {
   profilePic: string | null;
   loading: boolean;
   error: string | null;
-  onChangePress: () => void;
+  onChangePress?: () => void;
   onErrorDismiss?: () => void;
   userName?: string;
   primaryColor?: string;
@@ -23,14 +22,13 @@ interface ProfilePictureSectionProps {
 }
 
 /**
- * Reusable component for displaying and changing profile picture
- * Shows profile image with edit button and handles loading/error states
+ * Reusable component for displaying profile picture
+ * Shows profile image and handles loading/error states
  */
 export const ProfilePictureSection: React.FC<ProfilePictureSectionProps> = ({
   profilePic,
   loading,
   error,
-  onChangePress,
   onErrorDismiss,
   userName = 'User',
   primaryColor = '#6366F1',
@@ -137,48 +135,6 @@ export const ProfilePictureSection: React.FC<ProfilePictureSectionProps> = ({
           </View>
         )}
       </View>
-
-      {/* Change Picture Button */}
-      <TouchableOpacity
-        disabled={loading}
-        onPress={onChangePress}
-        style={[
-          styles.editButton,
-          {
-            backgroundColor: primaryColor,
-            opacity: loading ? 0.6 : 1,
-          },
-        ]}
-      >
-        {loading ? (
-          <ActivityIndicator size="small" color={surfaceColor} />
-        ) : (
-          <>
-            <Text
-              style={[
-                styles.editButtonIcon,
-                {
-                  fontSize: config.iconSize * 0.6,
-                  color: surfaceColor,
-                },
-              ]}
-            >
-              📸
-            </Text>
-            <Text
-              style={[
-                styles.editButtonText,
-                {
-                  color: surfaceColor,
-                  fontSize: config.fontSize * 0.75,
-                },
-              ]}
-            >
-              Change
-            </Text>
-          </>
-        )}
-      </TouchableOpacity>
     </View>
   );
 };
@@ -190,7 +146,7 @@ const styles = StyleSheet.create({
     marginVertical: 24,
   },
   imageWrapper: {
-    marginBottom: -8, // Negative margin to overlap edit button
+    marginBottom: 0,
     backgroundColor: '#F3F4F6',
     justifyContent: 'center',
     alignItems: 'center',
@@ -218,27 +174,5 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0, 0, 0, 0.3)',
     justifyContent: 'center',
     alignItems: 'center',
-  },
-  editButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 10,
-    paddingHorizontal: 16,
-    borderRadius: 20,
-    marginTop: 16,
-    minWidth: 120,
-    // Shadow
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 6,
-    elevation: 4,
-  },
-  editButtonIcon: {
-    marginRight: 6,
-  },
-  editButtonText: {
-    fontWeight: '600',
   },
 });
