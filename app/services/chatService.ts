@@ -18,9 +18,14 @@ export interface Message {
   senderAvatar?: string;
   text: string;
   fileUrl?: string;
-  fileType: 'text' | 'image' | 'pdf';
+  fileType: 'text' | 'image' | 'pdf' | 'meeting';
   timestamp: any; // Firestore Timestamp
   createdAt: Date;
+  meetingData?: {
+    description: string;
+    meetingLink: string;
+    dateTime: string;
+  };
 }
 
 export class ChatService {
@@ -207,7 +212,8 @@ export class ChatService {
               fileUrl: data.fileUrl,
               fileType: data.fileType,
               timestamp: data.timestamp,
-              createdAt: data.timestamp?.toDate ? data.timestamp.toDate() : new Date()
+              createdAt: data.timestamp?.toDate ? data.timestamp.toDate() : new Date(),
+              meetingData: data.meetingData
             };
             messages.push(message);
           });

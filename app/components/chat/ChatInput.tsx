@@ -1,21 +1,23 @@
 import { Feather, Ionicons } from '@expo/vector-icons';
 import React, { useState } from 'react';
 import {
-    ActivityIndicator,
-    Alert,
-    Platform,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View,
+  ActivityIndicator,
+  Alert,
+  Platform,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from 'react-native';
 import { CloudinaryService } from '../../services/cloudinaryService';
+import { AttachmentOptionsModal } from './AttachmentOptionsModal';
 
 interface ChatInputProps {
   onSendMessage: (text: string) => Promise<void>;
   onSendImage: (imageUrl: string, caption?: string) => Promise<void>;
   onSendPDF: (pdfUrl: string, fileName: string) => Promise<void>;
+  onCreateMeeting?: () => void;
   colors: any;
   disabled?: boolean;
 }
@@ -24,12 +26,14 @@ export const ChatInput: React.FC<ChatInputProps> = ({
   onSendMessage,
   onSendImage,
   onSendPDF,
+  onCreateMeeting,
   colors,
   disabled = false,
 }) => {
   const [message, setMessage] = useState('');
   const [sending, setSending] = useState(false);
   const [uploading, setUploading] = useState<'image' | 'pdf' | null>(null);
+  const [showAttachmentModal, setShowAttachmentModal] = useState(false);
 
   const handleSend = async () => {
     if (!message.trim() || sending || disabled) return;
@@ -112,33 +116,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
 
   const showAttachmentOptions = () => {
     if (disabled || !!uploading) return;
-
-    Alert.alert(
-      'Send Attachment',
-      'Choose what you want to send',
-      [
-        {
-          text: 'Take Photo',
-          onPress: () => handleSendImage(true),
-          style: 'default',
-        },
-        {
-          text: 'Choose Image',
-          onPress: () => handleSendImage(false),
-          style: 'default',
-        },
-        {
-          text: 'Send PDF',
-          onPress: handleSendPDF,
-          style: 'default',
-        },
-        {
-          text: 'Cancel',
-          style: 'cancel',
-        },
-      ],
-      { cancelable: true }
-    );
+    setShowAttachmentModal(true);
   };
 
   return (
@@ -221,6 +199,17 @@ export const ChatInput: React.FC<ChatInputProps> = ({
           )}
         </TouchableOpacity>
       </View>
+
+      {/* Attachment Options Modal */}
+      <AttachmentOptionsModal
+        visible={showAttachmentModal}
+        onClose={() => setShowAttachmentModal(false)}
+        onTakePhoto={() => handleSendImage(true)}
+        onChooseImage={() => handleSendImage(false)}
+        onSendPDF={handleSendPDF}
+        onCreateMeeting={onCreateMeeting}
+        colors={colors}
+      />
     </>
   );
 };

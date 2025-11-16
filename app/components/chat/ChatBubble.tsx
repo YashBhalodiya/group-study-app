@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 import { ChatService, Message } from '../../services/chatService';
 import { CloudinaryService } from '../../services/cloudinaryService';
+import { MeetingService } from '../../services/meetingService';
 
 interface ChatBubbleProps {
   message: Message;
@@ -33,6 +34,15 @@ export const ChatBubble: React.FC<ChatBubbleProps> = ({
     } catch (error) {
       console.error('Error opening PDF:', error);
       Alert.alert('Error', 'Failed to open PDF');
+    }
+  };
+
+  const handleOpenMeetingLink = async (url: string) => {
+    try {
+      await WebBrowser.openBrowserAsync(url);
+    } catch (error) {
+      console.error('Error opening meeting link:', error);
+      Alert.alert('Error', 'Failed to open meeting link');
     }
   };
 
@@ -148,6 +158,95 @@ export const ChatBubble: React.FC<ChatBubbleProps> = ({
             />
           </TouchableOpacity>
         )}
+
+        {/* Meeting message */}
+        {message.fileType === 'meeting' && (
+          <View
+            style={[
+              styles.meetingMessage,
+              { backgroundColor: isCurrentUser ? 'rgba(255,255,255,0.1)' : colors.background }
+            ]}
+          >
+            <View style={[styles.meetingHeader, { borderBottomColor: isCurrentUser ? 'rgba(255,255,255,0.2)' : colors.border }]}>
+              <View style={[styles.meetingIconContainer, { backgroundColor: isCurrentUser ? 'rgba(255,255,255,0.2)' : colors.primary }]}>
+                <MaterialIcons 
+                  name="event" 
+                  size={24} 
+                  color={isCurrentUser ? '#fff' : '#fff'} 
+                />
+              </View>
+              <View style={styles.meetingTitleContainer}>
+                <Text style={[styles.meetingBadge, { color: isCurrentUser ? 'rgba(255,255,255,0.9)' : colors.primary }]}>
+                  MEETING SCHEDULED
+                </Text>
+                <Text style={[
+                  styles.meetingTitle,
+                  { color: isCurrentUser ? '#fff' : colors.text }
+                ]} numberOfLines={2}>
+                  {message.text}
+                </Text>
+              </View>
+            </View>
+            
+            {message.meetingData && (
+              <View style={styles.meetingDetails}>
+                <View style={styles.meetingDetailRow}>
+                  <MaterialIcons 
+                    name="description" 
+                    size={16} 
+                    color={isCurrentUser ? 'rgba(255,255,255,0.8)' : colors.textSecondary} 
+                  />
+                  <Text style={[
+                    styles.meetingDescription,
+                    { color: isCurrentUser ? 'rgba(255,255,255,0.9)' : colors.text }
+                  ]} numberOfLines={3}>
+                    {message.meetingData.description}
+                  </Text>
+                </View>
+
+                <View style={styles.meetingDetailRow}>
+                  <MaterialIcons 
+                    name="access-time" 
+                    size={16} 
+                    color={isCurrentUser ? 'rgba(255,255,255,0.8)' : colors.textSecondary} 
+                  />
+                  <Text style={[
+                    styles.meetingDateTime,
+                    { color: isCurrentUser ? 'rgba(255,255,255,0.9)' : colors.text }
+                  ]}>
+                    {MeetingService.formatMeetingDate(new Date(message.meetingData.dateTime))}
+                  </Text>
+                </View>
+
+                <TouchableOpacity
+                  style={[
+                    styles.meetingLinkButton,
+                    { backgroundColor: isCurrentUser ? '#fff' : colors.primary }
+                  ]}
+                  onPress={() => handleOpenMeetingLink(message.meetingData!.meetingLink)}
+                  activeOpacity={0.8}
+                >
+                  <MaterialIcons 
+                    name="videocam" 
+                    size={18} 
+                    color={isCurrentUser ? colors.primary : '#fff'} 
+                  />
+                  <Text style={[
+                    styles.meetingLinkText,
+                    { color: isCurrentUser ? colors.primary : '#fff' }
+                  ]}>
+                    Join Meeting
+                  </Text>
+                  <MaterialIcons 
+                    name="arrow-forward" 
+                    size={16} 
+                    color={isCurrentUser ? colors.primary : '#fff'} 
+                  />
+                </TouchableOpacity>
+              </View>
+            )}
+          </View>
+        )}
         
         {/* Timestamp */}
         <Text style={[
@@ -257,5 +356,72 @@ const styles = StyleSheet.create({
   pdfAction: {
     fontSize: 12,
     fontStyle: 'italic',
+  },
+  meetingMessage: {
+    borderRadius: 8,
+    overflow: 'hidden',
+    minWidth: 250,
+    maxWidth: '100%',
+  },
+  meetingHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 12,
+    borderBottomWidth: 1,
+  },
+  meetingIconContainer: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
+  },
+  meetingTitleContainer: {
+    flex: 1,
+  },
+  meetingBadge: {
+    fontSize: 10,
+    fontWeight: '700',
+    letterSpacing: 0.5,
+    marginBottom: 4,
+  },
+  meetingTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    lineHeight: 20,
+  },
+  meetingDetails: {
+    padding: 12,
+  },
+  meetingDetailRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    marginBottom: 10,
+    gap: 8,
+  },
+  meetingDescription: {
+    fontSize: 14,
+    lineHeight: 18,
+    flex: 1,
+  },
+  meetingDateTime: {
+    fontSize: 14,
+    fontWeight: '500',
+    flex: 1,
+  },
+  meetingLinkButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    marginTop: 4,
+    gap: 6,
+  },
+  meetingLinkText: {
+    fontSize: 14,
+    fontWeight: '600',
   },
 });

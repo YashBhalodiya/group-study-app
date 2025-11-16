@@ -24,6 +24,8 @@ An open-source mobile app for students to create, join, and manage study groups.
 - **Dashboard:** View all groups you have joined or created.
 - **Create Group:** Start a new study group with subject, code, and description.
 - **Join Group:** Join existing groups using a unique code.
+- **Group Chat:** Real-time messaging with support for text, images, and PDFs.
+- **Meeting Scheduler:** Create and schedule meetings within group chats with title, description, meeting link, and date/time.
 - **Profile:** View and edit your profile, manage settings, and toggle preferences.
 - **Settings:** Access app settings and preferences.
 - **Modern UI:** Consistent, accessible, and responsive design using a custom color system.

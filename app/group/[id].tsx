@@ -15,9 +15,12 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ChatBubble } from '../components/chat/ChatBubble';
 import { ChatInput } from '../components/chat/ChatInput';
+import { CreateMeetingModal } from '../components/chat/CreateMeetingModal';
 import { useTheme } from '../contexts/ThemeContext';
 import { AuthService } from '../services/authService';
 import { ChatService, Message } from '../services/chatService';
+import { MeetingService } from '../services/meetingService';
+import { CreateMeetingData } from '../types/meeting';
 
 interface ChatScreenProps {}
 
@@ -32,6 +35,7 @@ export default function ChatScreen({}: ChatScreenProps) {
   
   const [messages, setMessages] = useState<Message[]>([]);
   const [loading, setLoading] = useState(true);
+  const [meetingModalVisible, setMeetingModalVisible] = useState(false);
   
   const flatListRef = useRef<FlatList>(null);
   const currentUser = AuthService.getCurrentUser();
@@ -77,6 +81,17 @@ export default function ChatScreen({}: ChatScreenProps) {
     if (!currentUser) throw new Error('User not authenticated');
     await ChatService.sendPdfMessage(groupId, currentUser.uid, pdfUrl, fileName);
   }, [groupId, currentUser]);
+
+  // Create meeting
+  const handleCreateMeeting = useCallback(async (meetingData: CreateMeetingData) => {
+    if (!currentUser) throw new Error('User not authenticated');
+    await MeetingService.createMeeting(groupId, currentUser.uid, meetingData);
+  }, [groupId, currentUser]);
+
+  // Open meeting modal
+  const openMeetingModal = useCallback(() => {
+    setMeetingModalVisible(true);
+  }, []);
 
   // Render message bubble
   const renderMessage = useCallback(({ item, index }: { item: Message; index: number }) => {
@@ -170,9 +185,18 @@ export default function ChatScreen({}: ChatScreenProps) {
           onSendMessage={handleSendMessage}
           onSendImage={handleSendImage}
           onSendPDF={handleSendPDF}
+          onCreateMeeting={openMeetingModal}
           colors={colors}
         />
       </KeyboardAvoidingView>
+
+      {/* Create Meeting Modal */}
+      <CreateMeetingModal
+        visible={meetingModalVisible}
+        onClose={() => setMeetingModalVisible(false)}
+        onSubmit={handleCreateMeeting}
+        colors={colors}
+      />
     </SafeAreaView>
   );
 }
