@@ -1,11 +1,11 @@
 import React from 'react';
 import {
-  View,
-  Image,
-  Text,
-  StyleSheet,
-  ActivityIndicator,
-  Alert,
+    ActivityIndicator,
+    Alert,
+    Image,
+    StyleSheet,
+    Text,
+    View,
 } from 'react-native';
 
 interface ProfilePictureSectionProps {
@@ -38,9 +38,9 @@ export const ProfilePictureSection: React.FC<ProfilePictureSectionProps> = ({
 }) => {
   // Size configurations
   const sizeConfig = {
-    small: { imageSize: 80, fontSize: 14, iconSize: 24 },
-    medium: { imageSize: 120, fontSize: 16, iconSize: 28 },
-    large: { imageSize: 160, fontSize: 18, iconSize: 32 },
+    small: { imageSize: 80, fontSize: 28, iconSize: 24 },
+    medium: { imageSize: 110, fontSize: 38, iconSize: 28 },
+    large: { imageSize: 140, fontSize: 48, iconSize: 32 },
   };
 
   const config = sizeConfig[size];
@@ -143,7 +143,7 @@ const styles = StyleSheet.create({
   container: {
     alignItems: 'center',
     justifyContent: 'center',
-    marginVertical: 24,
+    marginVertical: 8,
   },
   imageWrapper: {
     marginBottom: 0,
@@ -151,13 +151,15 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     overflow: 'hidden',
+    borderWidth: 4,
+    borderColor: 'rgba(0, 0, 0, 0.04)',
     // Shadow for iOS
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.15,
-    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.12,
+    shadowRadius: 16,
     // Shadow for Android
-    elevation: 6,
+    elevation: 8,
   },
   profileImage: {
     resizeMode: 'cover',
@@ -167,11 +169,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   initialsText: {
-    fontWeight: '700',
+    fontWeight: '800',
+    letterSpacing: -1,
   },
   loadingOverlay: {
     position: 'absolute',
-    backgroundColor: 'rgba(0, 0, 0, 0.3)',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
     justifyContent: 'center',
     alignItems: 'center',
   },
