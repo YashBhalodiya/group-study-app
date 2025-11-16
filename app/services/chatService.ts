@@ -1,6 +1,8 @@
 import {
     addDoc,
     collection,
+    deleteDoc,
+    doc,
     onSnapshot,
     orderBy,
     query,
@@ -261,6 +263,38 @@ export class ChatService {
       return `${hours}h ago`;
     } else {
       return date.toLocaleDateString();
+    }
+  }
+
+  /**
+   * Delete a message from a group
+   */
+  static async deleteMessage(
+    groupId: string,
+    messageId: string,
+    userId: string
+  ): Promise<void> {
+    if (!groupId || !messageId) {
+      throw new Error('Group ID and Message ID are required');
+    }
+
+    try {
+      // Reference to the message document
+      const messageRef = doc(
+        firestore,
+        'groups',
+        groupId,
+        this.MESSAGES_COLLECTION,
+        messageId
+      );
+
+      // Delete the message
+      await deleteDoc(messageRef);
+
+      console.log('Message deleted successfully:', messageId);
+    } catch (error: any) {
+      console.error('Error deleting message:', error);
+      throw new Error(`Failed to delete message: ${error.message}`);
     }
   }
 }

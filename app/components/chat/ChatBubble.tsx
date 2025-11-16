@@ -21,6 +21,7 @@ interface ChatBubbleProps {
   showAvatar: boolean;
   showSenderName: boolean;
   colors: any;
+  onLongPress?: (message: Message) => void;
 }
 
 export const ChatBubble: React.FC<ChatBubbleProps> = ({
@@ -29,6 +30,7 @@ export const ChatBubble: React.FC<ChatBubbleProps> = ({
   showAvatar,
   showSenderName,
   colors,
+  onLongPress,
 }) => {
   const handleOpenPDF = async (url: string) => {
     try {
@@ -156,13 +158,19 @@ export const ChatBubble: React.FC<ChatBubbleProps> = ({
       )}
       
       {/* Message content */}
-      <View style={[
-        styles.messageContent,
-        isCurrentUser 
-          ? [styles.currentUserBubble, { backgroundColor: colors.primary }] 
-          : [styles.otherUserBubble, { backgroundColor: colors.surface }],
-        !showAvatar && !isCurrentUser && styles.messageContentWithoutAvatar
-      ]}>
+      <TouchableOpacity
+        activeOpacity={0.9}
+        onLongPress={() => onLongPress?.(message)}
+        delayLongPress={500}
+        style={styles.touchableWrapper}
+      >
+        <View style={[
+          styles.messageContent,
+          isCurrentUser 
+            ? [styles.currentUserBubble, { backgroundColor: colors.primary }] 
+            : [styles.otherUserBubble, { backgroundColor: colors.surface }],
+          !showAvatar && !isCurrentUser && styles.messageContentWithoutAvatar
+        ]}>
         {showSenderName && (
           <Text style={[styles.senderName, { color: colors.primary }]}>
             {message.senderName}
@@ -334,7 +342,8 @@ export const ChatBubble: React.FC<ChatBubbleProps> = ({
         ]}>
           {ChatService.formatMessageTime(message.timestamp)}
         </Text>
-      </View>
+        </View>
+      </TouchableOpacity>
     </View>
   );
 };
@@ -370,8 +379,10 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '600',
   },
-  messageContent: {
+  touchableWrapper: {
     maxWidth: '75%',
+  },
+  messageContent: {
     borderRadius: 16,
     paddingHorizontal: 12,
     paddingVertical: 8,

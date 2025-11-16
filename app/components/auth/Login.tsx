@@ -1,12 +1,12 @@
 import { router } from "expo-router";
 import React, { useState } from "react";
 import {
-    SafeAreaView,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
+  SafeAreaView,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native";
 import Toast from 'react-native-toast-message';
 import { Colors } from "../../constants";
@@ -151,14 +151,7 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
             <Text style={styles.dividerText}>or</Text>
             <View style={styles.dividerLine} />
           </View>
-
-          <Button
-            title="Sign Up with Google"
-            onPress={() => console.log("Google sign up")}
-            variant="outline"
-            style={styles.googleButton}
-          />
-
+          
           <View style={styles.footer}>
             <Text style={styles.footerText}>Don't have an account? </Text>
             <TouchableOpacity onPress={handleSignUpPress}>
@@ -225,9 +218,6 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '600',
     textTransform: 'lowercase',
-  },
-  googleButton: {
-    marginBottom: 0,
   },
   footer: {
     flexDirection: "row",

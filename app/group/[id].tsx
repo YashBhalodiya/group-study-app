@@ -36,6 +36,7 @@ export default function ChatScreen({}: ChatScreenProps) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [loading, setLoading] = useState(true);
   const [meetingModalVisible, setMeetingModalVisible] = useState(false);
+  const [deletingMessageId, setDeletingMessageId] = useState<string | null>(null);
   
   const flatListRef = useRef<FlatList>(null);
   const currentUser = AuthService.getCurrentUser();
@@ -93,6 +94,47 @@ export default function ChatScreen({}: ChatScreenProps) {
     setMeetingModalVisible(true);
   }, []);
 
+  // Handle long press on message
+  const handleMessageLongPress = useCallback((message: Message) => {
+    // Only allow users to delete their own messages
+    if (message.senderId !== currentUser?.uid) {
+      Alert.alert(
+        'Cannot Delete',
+        'You can only delete your own messages.',
+        [{ text: 'OK', style: 'cancel' }]
+      );
+      return;
+    }
+
+    Alert.alert(
+      'Delete Message',
+      'Are you sure you want to delete this message? This action cannot be undone.',
+      [
+        {
+          text: 'Cancel',
+          style: 'cancel',
+        },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              setDeletingMessageId(message.id);
+              await ChatService.deleteMessage(groupId, message.id, currentUser!.uid);
+              // Message will be automatically removed from UI via the listener
+            } catch (error: any) {
+              console.error('Error deleting message:', error);
+              Alert.alert('Error', 'Failed to delete message. Please try again.');
+            } finally {
+              setDeletingMessageId(null);
+            }
+          },
+        },
+      ],
+      { cancelable: true }
+    );
+  }, [groupId, currentUser]);
+
   // Render message bubble
   const renderMessage = useCallback(({ item, index }: { item: Message; index: number }) => {
     const isCurrentUser = item.senderId === currentUser?.uid;
@@ -106,9 +148,10 @@ export default function ChatScreen({}: ChatScreenProps) {
         showAvatar={showAvatar}
         showSenderName={showSenderName}
         colors={colors}
+        onLongPress={handleMessageLongPress}
       />
     );
-  }, [currentUser, messages, colors]);
+  }, [currentUser, messages, colors, handleMessageLongPress]);
 
   if (loading) {
     return (
