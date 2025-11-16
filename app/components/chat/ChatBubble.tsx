@@ -1,4 +1,6 @@
 import { MaterialIcons } from '@expo/vector-icons';
+import * as FileSystem from 'expo-file-system';
+import * as Linking from 'expo-linking';
 import * as WebBrowser from 'expo-web-browser';
 import React from 'react';
 import {
@@ -30,10 +32,87 @@ export const ChatBubble: React.FC<ChatBubbleProps> = ({
 }) => {
   const handleOpenPDF = async (url: string) => {
     try {
-      await WebBrowser.openBrowserAsync(url);
-    } catch (error) {
+      // Format the PDF URL using Cloudinary service helper
+      const pdfUrl = CloudinaryService.formatPDFUrl(url);
+      
+      // For Cloudinary raw files, we need to download first then open
+      // This is more reliable than trying to open the URL directly
+      if (pdfUrl.includes('cloudinary.com') && pdfUrl.includes('/raw/upload/')) {
+        try {
+          // Create a local file path
+          const fileName = pdfUrl.split('/').pop() || `document_${Date.now()}.pdf`;
+          // Clean the fileName to remove query parameters if any
+          const cleanFileName = fileName.split('?')[0];
+          const fileUri = `${FileSystem.cacheDirectory}${cleanFileName}`;
+          
+          // Download the PDF file
+          const downloadResult = await FileSystem.downloadAsync(pdfUrl, fileUri);
+          
+          if (downloadResult.status === 200) {
+            // Try to get content URI (Android) or use file URI directly
+            try {
+              const contentUri = await FileSystem.getContentUriAsync(downloadResult.uri);
+              const canOpen = await Linking.canOpenURL(contentUri);
+              if (canOpen) {
+                await Linking.openURL(contentUri);
+                return;
+              }
+            } catch (contentUriError) {
+              // If getContentUriAsync fails, try with the file URI directly
+              console.log('Content URI failed, trying file URI:', contentUriError);
+            }
+            
+            // Fallback: try opening the file URI directly
+            const canOpenFile = await Linking.canOpenURL(downloadResult.uri);
+            if (canOpenFile) {
+              await Linking.openURL(downloadResult.uri);
+              return;
+            } else {
+              // Last resort: try opening the original URL
+              await Linking.openURL(pdfUrl);
+            }
+          } else {
+            throw new Error(`Failed to download PDF: Status ${downloadResult.status}`);
+          }
+        } catch (downloadError: any) {
+          console.log('Download failed, trying direct URL:', downloadError);
+          // Fallback to direct URL opening
+          const canOpen = await Linking.canOpenURL(pdfUrl);
+          if (canOpen) {
+            await Linking.openURL(pdfUrl);
+          } else {
+            await WebBrowser.openBrowserAsync(pdfUrl, {
+              showTitle: true,
+              enableBarCollapsing: true,
+              showInRecents: true,
+            });
+          }
+        }
+      } else {
+        // For non-Cloudinary URLs, try direct opening
+        try {
+          const canOpen = await Linking.canOpenURL(pdfUrl);
+          if (canOpen) {
+            await Linking.openURL(pdfUrl);
+            return;
+          }
+        } catch (linkingError) {
+          console.log('Linking failed, trying WebBrowser:', linkingError);
+        }
+        
+        // Fallback to WebBrowser
+        await WebBrowser.openBrowserAsync(pdfUrl, {
+          showTitle: true,
+          enableBarCollapsing: true,
+          showInRecents: true,
+        });
+      }
+    } catch (error: any) {
       console.error('Error opening PDF:', error);
-      Alert.alert('Error', 'Failed to open PDF');
+      Alert.alert(
+        'Error Opening PDF', 
+        error.message || 'Failed to open PDF. The file may be corrupted or inaccessible. Please try again later.'
+      );
     }
   };
 

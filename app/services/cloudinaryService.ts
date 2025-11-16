@@ -349,4 +349,21 @@ export class CloudinaryService {
       return originalUrl;
     }
   }
+
+  /**
+   * Format PDF URL for proper viewing
+   * Ensures Cloudinary PDF URLs are accessible and properly formatted
+   */
+  static formatPDFUrl(url: string): string {
+    try {
+      // Cloudinary raw file URLs should be directly accessible as-is
+      // The URL format is: https://res.cloudinary.com/{cloud_name}/raw/upload/{version}/{public_id}
+      // We don't need to modify the URL structure, just return it
+      // The system PDF viewer or browser should handle it correctly
+      return url;
+    } catch (error) {
+      console.error('Error formatting PDF URL:', error);
+      return url;
+    }
+  }
 }
