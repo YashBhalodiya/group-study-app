@@ -1,15 +1,15 @@
 import { router } from "expo-router";
 import React, { useState } from "react";
 import {
-  SafeAreaView,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
+    SafeAreaView,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
 } from "react-native";
 import Toast from 'react-native-toast-message';
-import { Colors, Layout } from "../../constants";
+import { Colors } from "../../constants";
 import { AuthService } from "../../services/authService";
 import { globalStyles } from "../../styles";
 import { Button, Input } from "../ui";
@@ -173,69 +173,77 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: Colors.background,
+    backgroundColor: '#FAFBFC',
   },
   scrollContent: {
     flexGrow: 1,
-    paddingHorizontal: Layout.spacing.lg,
+    paddingHorizontal: 24,
+    paddingTop: 40,
   },
   header: {
     alignItems: "center",
-    marginTop: Layout.spacing.md,
-    marginBottom: Layout.spacing.xl,
+    marginBottom: 48,
   },
   title: {
-    fontSize: Layout.fontSize.title,
-    fontWeight: "bold",
-    color: Colors.text,
+    fontSize: 32,
+    fontWeight: "800",
+    color: '#1A1A1A',
     textAlign: "center",
-    marginBottom: Layout.spacing.sm,
+    marginBottom: 12,
+    letterSpacing: -0.8,
   },
   subtitle: {
-    fontSize: Layout.fontSize.md,
-    color: Colors.textSecondary,
+    fontSize: 15,
+    color: '#6B7280',
     textAlign: "center",
     lineHeight: 22,
+    fontWeight: '500',
+    paddingHorizontal: 20,
+    opacity: 0.8,
   },
   formContainer: {
     flex: 1,
     justifyContent: "center",
-    marginBottom: Layout.spacing.xl,
+    paddingBottom: 40,
   },
   loginButton: {
-    marginTop: Layout.spacing.md,
+    marginTop: 24,
   },
   divider: {
     flexDirection: "row",
     alignItems: "center",
-    marginVertical: Layout.spacing.lg,
+    marginVertical: 28,
   },
   dividerLine: {
     flex: 1,
     height: 1,
-    backgroundColor: Colors.border,
+    backgroundColor: '#E5E7EB',
   },
   dividerText: {
-    marginHorizontal: Layout.spacing.md,
-    color: Colors.textSecondary,
-    fontSize: Layout.fontSize.sm,
+    marginHorizontal: 16,
+    color: '#9CA3AF',
+    fontSize: 13,
+    fontWeight: '600',
+    textTransform: 'lowercase',
   },
   googleButton: {
-    marginBottom: Layout.spacing.lg,
+    marginBottom: 0,
   },
   footer: {
     flexDirection: "row",
     justifyContent: "center",
     alignItems: "center",
-    marginTop: Layout.spacing.md,
+    marginTop: 28,
   },
   footerText: {
-    color: Colors.textSecondary,
-    fontSize: Layout.fontSize.md,
+    color: '#6B7280',
+    fontSize: 15,
+    fontWeight: '500',
   },
   signUpLink: {
     color: Colors.primary,
-    fontSize: Layout.fontSize.md,
-    fontWeight: "600",
+    fontSize: 15,
+    fontWeight: "700",
+    letterSpacing: -0.2,
   },
 });

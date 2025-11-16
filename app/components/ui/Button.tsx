@@ -1,13 +1,13 @@
 import React from 'react';
 import {
-  TouchableOpacity,
-  Text,
-  StyleSheet,
-  ActivityIndicator,
-  ViewStyle,
-  TextStyle,
+    ActivityIndicator,
+    StyleSheet,
+    Text,
+    TextStyle,
+    TouchableOpacity,
+    ViewStyle,
 } from 'react-native';
-import { Colors, Layout } from '../../constants';
+import { Colors } from '../../constants';
 
 interface ButtonProps {
   title: string;
@@ -63,57 +63,74 @@ export const Button: React.FC<ButtonProps> = ({
 
 const styles = StyleSheet.create({
   button: {
-    borderRadius: Layout.borderRadius.md,
+    borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
-    marginVertical: Layout.spacing.sm,
+    marginVertical: 0,
   },
   // Variants
   primary: {
     backgroundColor: Colors.primary,
+    shadowColor: Colors.primary,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 12,
+    elevation: 6,
   },
   secondary: {
     backgroundColor: Colors.secondary,
+    shadowColor: Colors.secondary,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 12,
+    elevation: 6,
   },
   outline: {
-    backgroundColor: 'transparent',
-    borderWidth: 2,
-    borderColor: Colors.primary,
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1.5,
+    borderColor: '#E5E7EB',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.04,
+    shadowRadius: 8,
+    elevation: 2,
   },
   // Sizes
   small: {
-    paddingVertical: Layout.spacing.sm,
-    paddingHorizontal: Layout.spacing.md,
+    paddingVertical: 10,
+    paddingHorizontal: 16,
   },
   medium: {
-    paddingVertical: Layout.spacing.md,
-    paddingHorizontal: Layout.spacing.lg,
+    paddingVertical: 16,
+    paddingHorizontal: 24,
   },
   large: {
-    paddingVertical: Layout.spacing.lg,
-    paddingHorizontal: Layout.spacing.xl,
+    paddingVertical: 18,
+    paddingHorizontal: 28,
   },
   // Text styles
   text: {
-    fontWeight: '600',
+    fontWeight: '700',
+    letterSpacing: -0.3,
   },
   primaryText: {
-    color: Colors.surface,
+    color: '#FFFFFF',
   },
   secondaryText: {
-    color: Colors.surface,
+    color: '#FFFFFF',
   },
   outlineText: {
     color: Colors.primary,
+    fontWeight: '700',
   },
   smallText: {
-    fontSize: Layout.fontSize.sm,
+    fontSize: 14,
   },
   mediumText: {
-    fontSize: Layout.fontSize.md,
+    fontSize: 16,
   },
   largeText: {
-    fontSize: Layout.fontSize.lg,
+    fontSize: 18,
   },
   disabled: {
     opacity: 0.5,

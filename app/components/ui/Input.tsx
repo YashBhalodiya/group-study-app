@@ -1,13 +1,13 @@
 import React from 'react';
 import {
-  TextInput,
-  View,
-  Text,
-  StyleSheet,
-  TextInputProps,
-  ViewStyle,
+    StyleSheet,
+    Text,
+    TextInput,
+    TextInputProps,
+    View,
+    ViewStyle,
 } from 'react-native';
-import { Colors, Layout } from '../../constants';
+import { Colors } from '../../constants';
 
 interface InputProps extends TextInputProps {
   label?: string;
@@ -41,31 +41,41 @@ export const Input: React.FC<InputProps> = ({
 
 const styles = StyleSheet.create({
   container: {
-    marginVertical: Layout.spacing.sm,
+    marginVertical: 10,
   },
   label: {
-    fontSize: Layout.fontSize.sm,
-    fontWeight: '500',
-    color: Colors.text,
-    marginBottom: Layout.spacing.xs,
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#1A1A1A',
+    marginBottom: 8,
+    letterSpacing: -0.2,
   },
   input: {
-    backgroundColor: Colors.surface,
-    borderWidth: 1,
-    borderColor: Colors.border,
-    borderRadius: Layout.borderRadius.md,
-    paddingHorizontal: Layout.spacing.md,
-    paddingVertical: Layout.spacing.sm,
-    fontSize: Layout.fontSize.md,
-    color: Colors.text,
-    minHeight: 48,
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1.5,
+    borderColor: '#E5E7EB',
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    fontSize: 15,
+    color: '#1A1A1A',
+    minHeight: 52,
+    fontWeight: '500',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.02,
+    shadowRadius: 4,
+    elevation: 1,
   },
   inputError: {
-    borderColor: Colors.error,
+    borderColor: '#EF4444',
+    borderWidth: 2,
   },
   errorText: {
-    fontSize: Layout.fontSize.xs,
-    color: Colors.error,
-    marginTop: Layout.spacing.xs,
+    fontSize: 13,
+    color: '#EF4444',
+    marginTop: 6,
+    fontWeight: '600',
+    letterSpacing: -0.1,
   },
 });
